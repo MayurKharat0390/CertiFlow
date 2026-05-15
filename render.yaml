@@ -21,7 +21,7 @@ services:
       - key: ALLOWED_HOSTS
         value: "*"
       - key: SITE_URL
-        value: "https://centriflow-app.onrender.com"
+        value: "https://certiflow-v2gi.onrender.com"
       - key: EMAIL_BACKEND
         value: "django.core.mail.backends.smtp.EmailBackend"
 

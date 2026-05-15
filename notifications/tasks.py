@@ -30,8 +30,10 @@ def send_queued_emails(limit=100):
             email_log.status = EmailLog.Status.SENT
             email_log.sent_at = timezone.now()
             email_log.save()
+            print(f"SUCCESS: Email sent to {email_log.recipient_email}")
             count += 1
         except Exception as e:
+            print(f"FAILED to send email to {email_log.recipient_email}: {str(e)}")
             email_log.status = EmailLog.Status.FAILED
             email_log.error_message = str(e)
             email_log.save()
