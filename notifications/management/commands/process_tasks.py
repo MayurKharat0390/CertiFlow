@@ -6,16 +6,24 @@ class Command(BaseCommand):
     help = 'Process pending emails and certificates'
 
     def handle(self, *args, **options):
-        self.stdout.write('Starting background task processing...')
+        import time
+        self.stdout.write(self.style.SUCCESS('--- Background Worker Started ---'))
         
-        # 1. Generate Certificates
-        self.stdout.write('Generating certificates...')
-        cert_result = generate_pending_certificates()
-        self.stdout.write(self.style.SUCCESS(f'Certificates: {cert_result}'))
-        
-        # 2. Send Emails
-        self.stdout.write('Sending emails...')
-        email_result = send_queued_emails()
-        self.stdout.write(self.style.SUCCESS(f'Emails: {email_result}'))
-        
-        self.stdout.write('Processing complete.')
+        while True:
+            try:
+                # 1. Generate Certificates
+                self.stdout.write('Checking for certificates...')
+                cert_result = generate_pending_certificates()
+                if "Generated 0" not in str(cert_result):
+                    self.stdout.write(self.style.SUCCESS(f'Certificates: {cert_result}'))
+                
+                # 2. Send Emails
+                self.stdout.write('Checking for queued emails...')
+                email_result = send_queued_emails()
+                if "Sent 0" not in str(email_result):
+                    self.stdout.write(self.style.SUCCESS(f'Emails: {email_result}'))
+                
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f'Error in worker loop: {str(e)}'))
+            
+            time.sleep(10) # Wait 10 seconds before checking again
