@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Registration - {{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-16">
+    <div class="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
+        <div class="p-8 bg-indigo-600 text-white flex items-center">
+            <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mr-4">
+                <i data-lucide="check-square" class="w-7 h-7"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold font-heading">Confirm Registration</h1>
+                <p class="text-indigo-100 text-sm">One more step to secure your spot</p>
+            </div>
+        </div>
+        
+        <div class="p-10">
+            <div class="flex items-start space-x-6 mb-10">
+                <div class="flex-shrink-0 w-24 h-24 rounded-2xl bg-gray-100 overflow-hidden">
+                    {% if event.banner_image %}
+                        <img src="{{ event.banner_image.url }}" class="w-full h-full object-cover">
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center text-gray-300">
+                            <i data-lucide="image" class="w-8 h-8"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900 mb-1">{{ event.title }}</h2>
+                    <p class="text-sm text-gray-500 mb-2 flex items-center"><i data-lucide="calendar" class="w-4 h-4 mr-1"></i> {{ event.start_datetime|date:"F d, Y @ H:i" }}</p>
+                    <p class="text-sm text-gray-500 flex items-center"><i data-lucide="map-pin" class="w-4 h-4 mr-1"></i> {{ event.venue_name }}</p>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 p-6 rounded-2xl mb-8">
+                <h3 class="text-sm font-bold text-gray-900 uppercase tracking-widest mb-4">Registration Details</h3>
+                <div class="space-y-4">
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-500">Attendee Name</span>
+                        <span class="text-sm font-bold text-gray-900">{{ user.get_full_name }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-500">Email Address</span>
+                        <span class="text-sm font-medium text-gray-900">{{ user.email }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-500">Status</span>
+                        <span class="text-sm font-bold text-green-600">Free Registration</span>
+                    </div>
+                </div>
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="flex items-center mb-8">
+                    <input id="terms" type="checkbox" required class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                    <label for="terms" class="ml-3 text-sm text-gray-600">I agree to participate and receive event-related notifications.</label>
+                </div>
+                
+                <div class="flex space-x-4">
+                    <a href="{% url 'registrations:public_list' %}" class="flex-1 text-center py-4 px-6 border border-gray-200 rounded-2xl font-bold text-gray-500 hover:bg-gray-50 transition">
+                        Cancel
+                    </a>
+                    <button type="submit" class="flex-[2] py-4 px-6 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition">
+                        Confirm Registration
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

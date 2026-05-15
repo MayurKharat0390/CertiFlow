@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance QR - {{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto px-4 py-12 text-center">
+    <div class="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
+        <div class="p-8 gradient-bg text-white">
+            <h1 class="text-2xl font-bold font-heading mb-1">{{ event.title }}</h1>
+            <p class="text-indigo-100 text-sm">Attendance Pass</p>
+        </div>
+        
+        <div class="p-10 space-y-8">
+            <div class="relative">
+                <!-- QR Container -->
+                <div id="qr-container" class="aspect-square bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden">
+                    <div class="animate-pulse flex flex-col items-center">
+                        <i data-lucide="loader-2" class="w-10 h-10 text-indigo-400 animate-spin mb-2"></i>
+                        <span class="text-sm text-gray-400 font-medium">Generating secure code...</span>
+                    </div>
+                </div>
+                
+                <!-- Refresh Indicator -->
+                <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-white shadow-md border border-gray-100 rounded-full flex items-center space-x-2">
+                    <div class="w-2 h-2 bg-green-500 rounded-full animate-ping"></div>
+                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Refreshing every {{ refresh_interval }}s</span>
+                </div>
+            </div>
+            
+            <div class="space-y-2">
+                <h2 class="text-xl font-bold text-gray-900">{{ user.get_full_name }}</h2>
+                <p class="text-sm font-mono text-gray-500">{{ registration.participant_id }}</p>
+            </div>
+            
+            <div class="pt-6 border-t border-gray-50">
+                <p class="text-xs text-gray-400 italic">
+                    Show this QR code to the event volunteer at the entry/exit point.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <a href="{% url 'events:dashboard' %}" class="mt-8 inline-flex items-center text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors">
+        <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Back to Dashboard
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const registrationId = "{{ registration.id }}";
+    const refreshInterval = {{ refresh_interval }} * 1000;
+    const qrContainer = document.getElementById('qr-container');
+
+    async function refreshQR() {
+        try {
+            const response = await fetch(`/attendance/api/token/${registrationId}/`);
+            const data = await response.json();
+            
+            if (data.qr_image) {
+                qrContainer.innerHTML = `<img src="${data.qr_image}" alt="Attendance QR" class="w-full h-full p-4 transition-all duration-500 opacity-0" id="qr-img">`;
+                // Trigger fade in
+                setTimeout(() => {
+                    const img = document.getElementById('qr-img');
+                    if (img) img.classList.remove('opacity-0');
+                }, 50);
+            }
+        } catch (error) {
+            console.error('Error refreshing QR:', error);
+        }
+    }
+
+    // Initial load
+    refreshQR();
+    
+    // Set interval for refreshing
+    setInterval(refreshQR, refreshInterval);
+</script>
+{% endblock %}

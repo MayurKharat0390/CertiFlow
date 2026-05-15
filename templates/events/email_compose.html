@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Compose Email - {{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="bg-white shadow-xl rounded-3xl border border-gray-100 overflow-hidden">
+        <div class="px-8 py-6 bg-indigo-600">
+            <h1 class="text-2xl font-bold text-white font-heading">Compose Event Email</h1>
+            <p class="text-indigo-100 text-sm opacity-80">Sending to {{ recipient_count }} confirmed participants</p>
+        </div>
+        
+        <form method="POST" class="p-8 space-y-6">
+            {% csrf_token %}
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Email Subject</label>
+                    <input type="text" name="subject" required value="Certificate Issued: {{ event.title }}"
+                        class="w-full px-4 py-3 border-gray-200 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium">
+                </div>
+                
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Message Body</label>
+                    <textarea name="message" rows="8" required
+                        class="w-full px-4 py-3 border-gray-200 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 text-sm leading-relaxed"
+                        placeholder="Write your custom message here... Use {{ name }} for participant name.">
+Hello {{ name }},
+
+Congratulations on completing {{ event.title }}! 
+
+We are pleased to share your official certificate of achievement. See it attached to this email.
+
+Thank you for being part of our event!
+                        </textarea>
+                </div>
+
+                <div class="p-4 bg-indigo-50 rounded-2xl flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2 bg-white rounded-lg shadow-sm">
+                            <i data-lucide="paperclip" class="w-5 h-5 text-indigo-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-indigo-900">Attach Certificate PDF</p>
+                            <p class="text-xs text-indigo-600">Automatically attach the issued certificate if available</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input type="checkbox" id="attach_cert" name="attach_certificate" checked 
+                            class="w-6 h-6 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-6 border-t border-gray-100 flex items-center justify-end space-x-4">
+                <a href="{% url 'events:event_detail' event.id %}" class="text-sm font-bold text-gray-400">Cancel</a>
+                <button type="submit" class="py-4 px-10 bg-indigo-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center">
+                    <i data-lucide="send" class="w-4 h-4 mr-2"></i> Send to {{ recipient_count }} People
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Preview Area -->
+    <div class="mt-8 p-6 border-2 border-dashed border-gray-200 rounded-3xl opacity-60">
+        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Live Placeholder Preview</h4>
+        <div class="space-y-2">
+            <div class="h-4 bg-gray-100 rounded w-1/4"></div>
+            <div class="h-4 bg-gray-100 rounded w-full"></div>
+            <div class="h-4 bg-gray-100 rounded w-5/6"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Lucide icons initialization is handled in base.html
+</script>
+{% endblock %}

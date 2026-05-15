@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up{% endblock %}
+
+{% block content %}
+<div class="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="flex justify-center">
+            <div class="w-12 h-12 gradient-bg rounded-xl flex items-center justify-center text-white">
+                <i data-lucide="user-plus" class="w-8 h-8"></i>
+            </div>
+        </div>
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 font-heading">
+            Create your CertiFlow account
+        </h2>
+        <p class="mt-2 text-center text-sm text-gray-600">
+            Already have an account?
+            <a href="{% url 'accounts:login' %}" class="font-medium text-indigo-600 hover:text-indigo-500">
+                sign in here
+            </a>
+        </p>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-100">
+            <form class="space-y-6" method="POST">
+                {% csrf_token %}
+                {% for field in form %}
+                <div>
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ field.label }}
+                    </label>
+                    <div class="mt-1">
+                        {{ field }}
+                    </div>
+                    {% if field.help_text %}
+                        <p class="mt-1 text-xs text-gray-500">{{ field.help_text|safe }}</p>
+                    {% endif %}
+                    {% if field.errors %}
+                        {% for error in field.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <div>
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white gradient-bg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150">
+                        Create Account
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-6 text-center">
+                <p class="text-xs text-gray-500">
+                    By signing up, you agree to our Terms of Service and Privacy Policy.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

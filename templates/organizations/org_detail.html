@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}{{ organization.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Org Header -->
+    <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden mb-8">
+        <div class="p-8 md:flex items-center justify-between">
+            <div class="flex items-center">
+                {% if organization.logo %}
+                    <img src="{{ organization.logo.url }}" class="w-24 h-24 rounded-3xl object-cover mr-6 shadow-lg">
+                {% else %}
+                    <div class="w-24 h-24 bg-indigo-100 rounded-3xl flex items-center justify-center text-indigo-600 mr-6 shadow-lg">
+                        <i data-lucide="building-2" class="w-12 h-12"></i>
+                    </div>
+                {% endif %}
+                <div>
+                    <h1 class="text-3xl font-extrabold text-gray-900 font-heading">{{ organization.name }}</h1>
+                    <p class="text-gray-500 mt-1 flex items-center">
+                        <i data-lucide="globe" class="w-4 h-4 mr-2"></i> {{ organization.website|default:"No website" }}
+                    </p>
+                </div>
+            </div>
+            <div class="mt-6 md:mt-0 flex space-x-3">
+                <button class="px-4 py-2 border border-gray-300 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50">Edit Profile</button>
+                <button class="px-4 py-2 bg-indigo-600 rounded-xl text-sm font-bold text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200">Invite Team</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main: Org Events -->
+        <div class="lg:col-span-2 space-y-8">
+            <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="px-8 py-6 border-b border-gray-50 flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-900 font-heading">Institutional Events</h3>
+                    <a href="{% url 'events:event_create' %}" class="text-sm font-bold text-indigo-600 hover:text-indigo-500 flex items-center">
+                        <i data-lucide="plus" class="w-4 h-4 mr-1"></i> New Event
+                    </a>
+                </div>
+                <div class="divide-y divide-gray-50">
+                    {% for event in events %}
+                    <div class="p-8 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 mr-4">
+                                    <i data-lucide="calendar" class="w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-lg font-bold text-gray-900">{{ event.title }}</h4>
+                                    <p class="text-sm text-gray-500">{{ event.start_datetime|date:"M d, Y" }} &bull; {{ event.registered_count }} Registered</p>
+                                </div>
+                            </div>
+                            <a href="{% url 'events:event_detail' event.id %}" class="p-2 text-gray-400 hover:text-indigo-600">
+                                <i data-lucide="chevron-right" class="w-6 h-6"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="p-12 text-center text-gray-500 italic">No events found for this organization.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar: Team Members -->
+        <div class="space-y-8">
+            <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="px-8 py-6 border-b border-gray-50">
+                    <h3 class="text-xl font-bold text-gray-900 font-heading">Team</h3>
+                </div>
+                <div class="p-8 space-y-6">
+                    {% for membership in memberships %}
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="h-10 w-10 rounded-full gradient-bg flex items-center justify-center text-white font-bold mr-3 text-sm">
+                                {{ membership.user.get_short_name.0|upper }}
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-gray-900">{{ membership.user.get_full_name }}</p>
+                                <p class="text-xs text-gray-500 uppercase font-bold tracking-widest">{{ membership.get_role_display }}</p>
+                            </div>
+                        </div>
+                        <button class="text-gray-400 hover:text-gray-600"><i data-lucide="more-horizontal" class="w-5 h-5"></i></button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

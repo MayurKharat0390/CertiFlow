@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Certificates{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="md:flex md:items-center md:justify-between mb-8">
+        <div class="flex-1 min-w-0">
+            <h1 class="text-3xl font-bold leading-7 text-gray-900 sm:text-4xl sm:truncate font-heading">
+                Certificates
+            </h1>
+        </div>
+        {% if is_manager %}
+        <div class="mt-4 flex md:mt-0 md:ml-4">
+            <a href="{% url 'certificates:template_create' %}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                Create Template
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if is_manager %}
+    <!-- Stats for Managers -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-3 mb-8">
+        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+            <div class="flex items-center">
+                <div class="p-3 bg-indigo-100 rounded-lg text-indigo-600 mr-4">
+                    <i data-lucide="award" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-gray-400 uppercase">Total Issued</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ certs_issued|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+            <div class="flex items-center">
+                <div class="p-3 bg-green-100 rounded-lg text-green-600 mr-4">
+                    <i data-lucide="check-square" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-gray-400 uppercase">Verified</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ certs_verified|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+            <div class="flex items-center">
+                <div class="p-3 bg-purple-100 rounded-lg text-purple-600 mr-4">
+                    <i data-lucide="layout" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-gray-400 uppercase">Active Templates</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ templates_count|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Templates Section -->
+    <h2 class="text-xl font-bold text-gray-900 mb-6 font-heading">Design Templates</h2>
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {% for template in templates %}
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+            <div class="h-40 bg-gray-100 relative">
+                {% if template.background_image %}
+                    <img src="{{ template.background_image.url }}" class="w-full h-full object-cover">
+                {% else %}
+                    <div class="w-full h-full flex items-center justify-center text-gray-300">
+                        <i data-lucide="image" class="w-12 h-12"></i>
+                    </div>
+                {% endif %}
+                <div class="absolute inset-0 bg-black/20"></div>
+                <div class="absolute bottom-4 left-4 text-white">
+                    <h3 class="font-bold text-lg">{{ template.name }}</h3>
+                    <p class="text-xs opacity-80">{{ template.event.title }}</p>
+                </div>
+            </div>
+            <div class="p-4 flex justify-between items-center">
+                <span class="text-xs text-gray-500">Updated {{ template.updated_at|timesince }} ago</span>
+                <div class="flex space-x-2">
+                    <a href="{% url 'certificates:template_update' template.id %}" class="p-2 text-gray-400 hover:text-indigo-600">
+                        <i data-lucide="edit" class="w-4 h-4"></i>
+                    </a>
+                    <button class="p-2 text-gray-400 hover:text-indigo-600"><i data-lucide="copy" class="w-4 h-4"></i></button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full py-12 bg-white rounded-2xl border-2 border-dashed border-gray-200 text-center">
+            <p class="text-gray-500">No certificate templates found.</p>
+            <a href="{% url 'certificates:template_create' %}" class="mt-4 text-sm font-bold text-indigo-600 hover:text-indigo-500 flex items-center mx-auto w-fit">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Create First Template
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Participant's Certificates Section -->
+    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        {% for cert in user_certificates %}
+        <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden group">
+            <div class="h-56 bg-indigo-900 relative flex items-center justify-center">
+                <i data-lucide="award" class="w-20 h-20 text-white/20"></i>
+                <div class="absolute inset-0 bg-gradient-to-t from-indigo-900/80 to-transparent"></div>
+                <div class="absolute bottom-6 left-6 text-white">
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-indigo-300 mb-1">{{ cert.template.category.name }}</p>
+                    <h3 class="text-xl font-bold font-heading">{{ cert.template.event.title }}</h3>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase font-bold tracking-widest">Certificate ID</p>
+                        <p class="text-sm font-mono text-gray-700">{{ cert.certificate_id }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-gray-400 uppercase font-bold tracking-widest">Issued On</p>
+                        <p class="text-sm text-gray-700">{{ cert.issue_date|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+                <div class="flex space-x-3">
+                    {% if cert.pdf_file %}
+                    <a href="{{ cert.pdf_file.url }}" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-center text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">
+                        Download PDF
+                    </a>
+                    {% else %}
+                    <button disabled class="flex-1 py-3 bg-gray-200 text-gray-400 rounded-xl text-center text-sm font-bold cursor-not-allowed">
+                        Generating...
+                    </button>
+                    {% endif %}
+                    <a href="{% url 'verify:certificate' cert.certificate_id %}" class="px-4 py-3 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-100 transition-all">
+                        <i data-lucide="external-link" class="w-5 h-5"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full py-20 bg-white rounded-3xl border border-gray-100 text-center">
+            <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i data-lucide="award" class="w-10 h-10 text-gray-300"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 font-heading">No Certificates Yet</h3>
+            <p class="text-gray-500 mt-2">Attend events and complete requirements to earn your certificates.</p>
+            <a href="{% url 'registrations:public_list' %}" class="mt-6 inline-flex items-center text-indigo-600 font-bold hover:underline">
+                Browse Events <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

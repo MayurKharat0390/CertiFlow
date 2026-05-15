@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Volunteer Scanner - {{ event.title }}{% endblock %}
+
+{% block extra_head %}
+<script src="https://unpkg.com/html5-qrcode"></script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto px-4 py-8">
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold font-heading text-gray-900">QR Scanner</h1>
+            <p class="text-sm text-gray-500">{{ event.title }}</p>
+        </div>
+        <div class="flex space-x-2">
+            <span id="scan-count" class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold">0 Scans</span>
+        </div>
+    </div>
+
+    <!-- Scanner UI -->
+    <div class="bg-black rounded-3xl shadow-2xl overflow-hidden relative border-4 border-gray-900">
+        <div id="reader" class="w-full aspect-square"></div>
+        
+        <!-- Overlay -->
+        <div id="scan-overlay" class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+            <div class="w-64 h-64 border-2 border-indigo-500 rounded-3xl opacity-50 relative">
+                <div class="absolute inset-0 border-4 border-indigo-500 rounded-3xl animate-pulse"></div>
+            </div>
+            <p class="mt-8 text-white text-sm font-medium tracking-widest uppercase opacity-70">Align QR Code within frame</p>
+        </div>
+    </div>
+
+    <!-- Result Area -->
+    <div id="result-area" class="mt-8 hidden">
+        <div id="result-card" class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 transform transition-all duration-300 translate-y-4 opacity-0">
+            <div class="flex items-center">
+                <div id="result-icon" class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center mr-4">
+                    <!-- Icon injected by JS -->
+                </div>
+                <div class="flex-1">
+                    <h3 id="result-title" class="text-lg font-bold text-gray-900"></h3>
+                    <p id="result-subtitle" class="text-sm text-gray-500"></p>
+                </div>
+            </div>
+            <div id="result-message" class="mt-4 p-3 bg-gray-50 rounded-xl text-xs font-medium text-gray-600">
+                <!-- Message injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-8 grid grid-cols-2 gap-4">
+        <button id="switch-camera" class="flex items-center justify-center p-4 bg-gray-100 rounded-2xl text-gray-700 font-bold text-sm hover:bg-gray-200 transition-colors">
+            <i data-lucide="refresh-cw" class="w-5 h-5 mr-2"></i> Switch Camera
+        </button>
+        <button id="pause-scanner" class="flex items-center justify-center p-4 bg-gray-100 rounded-2xl text-gray-700 font-bold text-sm hover:bg-gray-200 transition-colors">
+            <i data-lucide="pause" class="w-5 h-5 mr-2"></i> Pause
+        </button>
+    </div>
+</div>
+
+<!-- Audio for scan feedback -->
+<audio id="beep-success" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"></audio>
+<audio id="beep-error" src="https://assets.mixkit.co/active_storage/sfx/2355/2355-preview.mp3"></audio>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let html5QrCode;
+    let isProcessing = false;
+    let scanCount = 0;
+    const eventId = "{{ event.id }}";
+    
+    const resultArea = document.getElementById('result-area');
+    const resultCard = document.getElementById('result-card');
+    const resultIcon = document.getElementById('result-icon');
+    const resultTitle = document.getElementById('result-title');
+    const resultSubtitle = document.getElementById('result-subtitle');
+    const resultMessage = document.getElementById('result-message');
+    
+    function showResult(success, data) {
+        resultArea.classList.remove('hidden');
+        resultCard.classList.remove('opacity-0', 'translate-y-4');
+        
+        if (success) {
+            document.getElementById('beep-success').play();
+            resultIcon.className = "flex-shrink-0 w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mr-4 text-green-600";
+            resultIcon.innerHTML = '<i data-lucide="check-circle" class="w-7 h-7"></i>';
+            resultTitle.innerText = data.participant || "Success";
+            resultSubtitle.innerText = `Type: ${data.scan_type.replace('_', ' ').toUpperCase()}`;
+            resultMessage.innerText = `Check-in recorded at ${data.time}. Verification successful.`;
+            scanCount++;
+            document.getElementById('scan-count').innerText = `${scanCount} Scans`;
+        } else {
+            document.getElementById('beep-error').play();
+            resultIcon.className = "flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mr-4 text-red-600";
+            resultIcon.innerHTML = '<i data-lucide="alert-circle" class="w-7 h-7"></i>';
+            resultTitle.innerText = "Access Denied";
+            resultSubtitle.innerText = "Verification Failed";
+            resultMessage.innerText = data.error || "The provided QR code is invalid or expired.";
+        }
+        
+        lucide.createIcons();
+        
+        // Auto hide result after 3 seconds
+        setTimeout(() => {
+            if (!isProcessing) {
+                resultCard.classList.add('opacity-0', 'translate-y-4');
+                setTimeout(() => resultArea.classList.add('hidden'), 300);
+            }
+        }, 3000);
+    }
+
+    async function onScanSuccess(decodedText, decodedResult) {
+        if (isProcessing) return;
+        
+        isProcessing = true;
+        
+        const formData = new FormData();
+        formData.append('token', decodedText);
+        formData.append('event_id', eventId);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        try {
+            const response = await fetch('/attendance/api/process-scan/', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            showResult(data.success, data);
+        } catch (error) {
+            showResult(false, { error: "Network error. Please try again." });
+        } finally {
+            setTimeout(() => { isProcessing = false; }, 2000); // Cooldown
+        }
+    }
+
+    function startScanner() {
+        html5QrCode = new Html5Qrcode("reader");
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        
+        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
+    }
+
+    document.addEventListener('DOMContentLoaded', startScanner);
+    
+    document.getElementById('pause-scanner').addEventListener('click', () => {
+        if (html5QrCode) {
+            html5QrCode.pause();
+        }
+    });
+</script>
+{% endblock %}

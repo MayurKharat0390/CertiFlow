@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Events{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="md:flex md:items-center md:justify-between mb-8">
+        <div class="flex-1 min-w-0">
+            <h1 class="text-3xl font-bold leading-7 text-gray-900 sm:text-4xl sm:truncate font-heading">
+                Events
+            </h1>
+        </div>
+        <div class="mt-4 flex md:mt-0 md:ml-4">
+            <a href="{% url 'events:event_create' %}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                Create Event
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters (Simplified) -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-8 flex flex-wrap gap-4 items-center">
+        <span class="text-sm font-medium text-gray-500">Filter by:</span>
+        <button class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">All</button>
+        <button class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium hover:bg-gray-200">Active</button>
+        <button class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium hover:bg-gray-200">Drafts</button>
+        <div class="ml-auto relative">
+            <input type="text" placeholder="Search events..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500">
+            <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-3"></i>
+        </div>
+    </div>
+
+    <!-- Events Grid -->
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {% for event in events %}
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 group">
+            <div class="aspect-w-16 aspect-h-9 relative">
+                {% if event.banner_image %}
+                    <img src="{{ event.banner_image.url }}" alt="{{ event.title }}" class="object-cover w-full h-48">
+                {% else %}
+                    <div class="w-full h-48 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white">
+                        <i data-lucide="image" class="w-12 h-12 opacity-50"></i>
+                    </div>
+                {% endif %}
+                <div class="absolute top-4 right-4">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider {% if event.status == 'published' %}bg-green-500 text-white{% else %}bg-gray-500 text-white{% endif %} shadow-sm">
+                        {{ event.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-indigo-600 uppercase tracking-widest">{{ event.get_event_type_display }}</span>
+                    <span class="text-xs text-gray-500 flex items-center"><i data-lucide="users" class="w-3 h-3 mr-1"></i> {{ event.registered_count }}</span>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors">{{ event.title }}</h3>
+                <div class="space-y-2 mb-6">
+                    <p class="text-sm text-gray-500 flex items-center">
+                        <i data-lucide="calendar" class="w-4 h-4 mr-2"></i>
+                        {{ event.start_datetime|date:"d M Y, H:i" }}
+                    </p>
+                    <p class="text-sm text-gray-500 flex items-center">
+                        <i data-lucide="map-pin" class="w-4 h-4 mr-2"></i>
+                        {{ event.venue_name|default:"Online" }}
+                    </p>
+                </div>
+                <a href="{% url 'events:event_detail' event.id %}" class="block w-full text-center py-2 px-4 border border-indigo-600 rounded-lg text-sm font-bold text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all">
+                    Manage Event
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full py-20 text-center">
+            <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="calendar" class="w-10 h-10 text-gray-300"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900">No events yet</h3>
+            <p class="text-gray-500 mt-1">Get started by creating your first event template.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

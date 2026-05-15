@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between mb-8">
+        <div class="flex-1 min-w-0">
+            <h1 class="text-3xl font-bold leading-7 text-gray-900 sm:text-4xl sm:truncate font-heading">
+                Welcome back, {{ user.first_name|default:user.email }}!
+            </h1>
+            <p class="mt-1 text-sm text-gray-500">
+                {% if user.role == 'participant' %}
+                    Manage your event registrations and certificates.
+                {% else %}
+                    Here's what's happening with your institutional events today.
+                {% endif %}
+            </p>
+        </div>
+        <div class="mt-4 flex md:mt-0 md:ml-4 space-x-3">
+            {% if user.is_superuser or user.role == 'event_manager' or user.role == 'org_admin' %}
+            <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                <i data-lucide="download" class="w-4 h-4 mr-2"></i> Export
+            </button>
+            <a href="{% url 'events:event_create' %}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i> New Event
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        {% if user.role == 'participant' %}
+            <div class="bg-white overflow-hidden shadow rounded-xl border border-gray-100 hover:shadow-md transition-shadow">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-indigo-100 rounded-lg p-3">
+                            <i data-lucide="calendar" class="h-6 w-6 text-indigo-600"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">My Events</dt>
+                                <dd class="text-2xl font-bold text-gray-900">{{ events.count|default:0 }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white overflow-hidden shadow rounded-xl border border-gray-100 hover:shadow-md transition-shadow">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-amber-100 rounded-lg p-3">
+                            <i data-lucide="award" class="h-6 w-6 text-amber-600"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Certificates Earned</dt>
+                                <dd class="text-2xl font-bold text-gray-900">{{ certs_count|default:0 }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="bg-white overflow-hidden shadow rounded-xl border border-gray-100 hover:shadow-md transition-shadow">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-indigo-100 rounded-lg p-3">
+                            <i data-lucide="calendar" class="h-6 w-6 text-indigo-600"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Active Events</dt>
+                                <dd class="text-2xl font-bold text-gray-900">{{ upcoming_count|default:0 }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-xl border border-gray-100 hover:shadow-md transition-shadow">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-green-100 rounded-lg p-3">
+                            <i data-lucide="users" class="h-6 w-6 text-green-600"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Registrations</dt>
+                                <dd class="text-2xl font-bold text-gray-900">{{ total_registrations|default:0 }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-xl border border-gray-100 hover:shadow-md transition-shadow">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-purple-100 rounded-lg p-3">
+                            <i data-lucide="check-circle" class="h-6 w-6 text-purple-600"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Avg Attendance</dt>
+                                <dd class="text-2xl font-bold text-gray-900">{{ attendance_rate|default:"0%" }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-xl border border-gray-100 hover:shadow-md transition-shadow">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-amber-100 rounded-lg p-3">
+                            <i data-lucide="award" class="h-6 w-6 text-amber-600"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Total Issued</dt>
+                                <dd class="text-2xl font-bold text-gray-900">{{ certs_count|default:0 }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Section: Events -->
+        <div class="lg:col-span-2">
+            <div class="bg-white shadow rounded-xl border border-gray-100 overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-900 font-heading">
+                        {% if user.role == 'participant' %}My Registered Events{% else %}Active & Upcoming Events{% endif %}
+                    </h3>
+                    <a href="{% url 'events:event_list' %}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">View all</a>
+                </div>
+                <div class="divide-y divide-gray-100">
+                    {% for event in events %}
+                    <div class="p-6 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex-shrink-0 h-12 w-12 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
+                                <i data-lucide="calendar" class="w-6 h-6"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-base font-bold text-gray-900 truncate">{{ event.title }}</h4>
+                                <div class="flex items-center mt-1 space-x-4 text-sm text-gray-500">
+                                    <span class="flex items-center"><i data-lucide="map-pin" class="w-4 h-4 mr-1"></i> {{ event.venue_name }}</span>
+                                    <span class="flex items-center"><i data-lucide="clock" class="w-4 h-4 mr-1"></i> {{ event.start_datetime|date:"M d, Y" }}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if event.status == 'published' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ event.get_status_display }}
+                                </span>
+                                <a href="{% url 'events:event_detail' event.id %}" class="p-2 text-gray-400 hover:text-indigo-600">
+                                    <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="p-12 text-center">
+                        <i data-lucide="calendar-x" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+                        <p class="text-gray-500">No events found.</p>
+                        {% if user.role != 'participant' %}
+                        <a href="{% url 'events:event_create' %}" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                            <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Create Event
+                        </a>
+                        {% else %}
+                        <a href="{% url 'registrations:public_list' %}" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                            Explore Events
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-8">
+            {% if user.role != 'participant' %}
+            <div class="bg-white shadow rounded-xl border border-gray-100 overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-100">
+                    <h3 class="text-lg font-bold text-gray-900 font-heading">Recent Activity</h3>
+                </div>
+                <div class="p-6">
+                    <ul class="space-y-6">
+                        {% for log in activity_logs %}
+                        <li class="flex space-x-3">
+                            <div class="flex-shrink-0">
+                                <span class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                                    <i data-lucide="{% if log.action == 'scan' %}check{% elif log.action == 'issue_cert' %}award{% else %}info{% endif %}" class="w-4 h-4"></i>
+                                </span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm text-gray-900">
+                                    <span class="font-medium text-gray-900">{{ log.user.get_short_name }}</span> {{ log.description }}
+                                </p>
+                                <p class="text-xs text-gray-500 mt-0.5">{{ log.timestamp|timesince }} ago</p>
+                            </div>
+                        </li>
+                        {% empty %}
+                        <li class="text-sm text-gray-500 text-center py-4">No recent activity</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% else %}
+            <div class="bg-white shadow rounded-xl border border-gray-100 overflow-hidden p-6">
+                <h3 class="text-lg font-bold text-gray-900 font-heading mb-4">Quick QR Access</h3>
+                <p class="text-sm text-gray-500 mb-4">Select an active event from the list to show your attendance QR code.</p>
+                <div class="p-4 bg-indigo-50 rounded-xl border border-indigo-100 flex items-center">
+                    <i data-lucide="smartphone" class="w-10 h-10 text-indigo-600 mr-4"></i>
+                    <span class="text-xs text-indigo-700 font-medium italic">Your QR code refreshes every 20s for security.</span>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="bg-gradient-to-br from-indigo-600 to-purple-700 shadow rounded-xl p-6 text-white">
+                <h3 class="text-lg font-bold font-heading mb-2">Need Help?</h3>
+                <p class="text-indigo-100 text-sm mb-4">Check our guides for help with registration or certificates.</p>
+                <a href="#" class="inline-flex items-center text-sm font-semibold hover:underline">
+                    View Guides <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

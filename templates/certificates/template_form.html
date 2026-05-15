@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left: Configuration & Controls (4/12) -->
+        <div class="lg:col-span-4 space-y-6">
+            <div class="bg-white shadow-xl rounded-3xl border border-gray-100 overflow-hidden">
+                <div class="px-6 py-4 bg-indigo-600">
+                    <h1 class="text-xl font-bold text-white font-heading">{{ title }}</h1>
+                </div>
+                
+                <form id="template-form" method="POST" enctype="multipart/form-data" class="p-6 space-y-6">
+                    {% csrf_token %}
+                    
+                    {% if form.errors %}
+                    <div class="p-4 mb-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg">
+                        <p class="font-bold mb-1">Validation Error:</p>
+                        <ul class="list-disc list-inside text-xs">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <li>{{ field }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Basic Info -->
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Template Name</label>
+                                {{ form.name }}
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Event</label>
+                                {{ form.event }}
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Category</label>
+                                {{ form.category }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Background Upload -->
+                    <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Background Design</label>
+                        <div class="relative group border-2 border-dashed border-gray-200 rounded-2xl p-4 hover:border-indigo-400 transition-colors bg-gray-50/50">
+                            <div class="flex items-center space-x-3">
+                                <i data-lucide="image" class="h-5 w-5 text-gray-400"></i>
+                                <span class="text-xs font-medium text-gray-600">Upload Landscape PNG/JPG</span>
+                            </div>
+                            <input id="id_background_image" name="background_image" type="file" class="absolute inset-0 opacity-0 cursor-pointer" accept="image/*">
+                        </div>
+                    </div>
+
+                    <!-- Visual Field Controls -->
+                    <div class="pt-6 border-t border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fields Editor</label>
+                            <div class="flex space-x-2">
+                                <button type="button" onclick="addField()" class="p-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100" title="Add New Field">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                </button>
+                                <button type="button" onclick="removeField()" class="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100" title="Remove Selected Field">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <select id="field-selector" class="w-full text-xs font-bold text-indigo-600 bg-indigo-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-indigo-200">
+                                <!-- Options populated by JS -->
+                            </select>
+                        </div>
+
+                        <div id="controls-panel" class="space-y-5 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                            <!-- Field Type -->
+                            <div class="grid grid-cols-1 gap-4">
+                                <div>
+                                    <span class="block text-[10px] font-bold text-gray-500 uppercase mb-2">Field Type</span>
+                                    <select id="input-type" class="w-full text-xs font-bold border-gray-200 rounded-lg">
+                                        <option value="participant_name">Participant Name</option>
+                                        <option value="event_name">Event Name</option>
+                                        <option value="cert_id">Certificate ID</option>
+                                        <option value="date">Issue Date</option>
+                                        <option value="qr_code">Verification QR Code</option>
+                                        <option value="custom">Custom Text</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- X Position -->
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-[10px] font-bold text-gray-500 uppercase">X Position</span>
+                                    <span id="val-x" class="text-xs font-mono font-bold text-indigo-600">500</span>
+                                </div>
+                                <input type="range" id="input-x" min="0" max="1000" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                            </div>
+
+                            <!-- Y Position -->
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-[10px] font-bold text-gray-500 uppercase">Y Position</span>
+                                    <span id="val-y" class="text-xs font-mono font-bold text-indigo-600">500</span>
+                                </div>
+                                <input type="range" id="input-y" min="0" max="1000" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                            </div>
+
+                            <!-- Font Size -->
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-[10px] font-bold text-gray-500 uppercase">Font Size</span>
+                                    <span id="val-size" class="text-xs font-mono font-bold text-indigo-600">36</span>
+                                </div>
+                                <input type="range" id="input-size" min="10" max="120" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                            </div>
+
+                            <!-- Color & Font -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <span class="block text-[10px] font-bold text-gray-500 uppercase mb-2">Color</span>
+                                    <input type="color" id="input-color" class="w-full h-10 p-0 border-none rounded-lg cursor-pointer">
+                                </div>
+                                <div>
+                                    <span class="block text-[10px] font-bold text-gray-500 uppercase mb-2">Alignment</span>
+                                    <select id="input-align" class="w-full text-xs font-bold border-gray-200 rounded-lg">
+                                        <option value="center">Center</option>
+                                        <option value="left">Left</option>
+                                        <option value="right">Right</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-2">
+                                    <span class="block text-[10px] font-bold text-gray-500 uppercase mb-2">Font Family</span>
+                                    <select id="input-font" class="w-full text-xs font-bold border-gray-200 rounded-lg">
+                                        <option value="Helvetica">Helvetica (Modern)</option>
+                                        <option value="Helvetica-Bold">Helvetica Bold</option>
+                                        <option value="Times-Roman">Times (Classic)</option>
+                                        <option value="Times-Bold">Times Bold</option>
+                                        <option value="Courier">Courier (Monospace)</option>
+                                        <option value="Courier-Bold">Courier Bold</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden JSON Field -->
+                    <div class="hidden">
+                        <textarea name="layout_config" id="id_layout_config">{{ form.layout_config.value|default:'{}' }}</textarea>
+                    </div>
+                    
+                    <div class="pt-6 border-t border-gray-100 flex items-center justify-end space-x-4">
+                        <a href="{% url 'certificates:certificate_list' %}" class="text-sm font-bold text-gray-400">Cancel</a>
+                        <button type="submit" class="py-3 px-8 bg-indigo-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">
+                            Save Design
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right: Real-time Preview (8/12) -->
+        <div class="lg:col-span-8">
+            <div class="bg-gray-900 rounded-[2.5rem] shadow-2xl p-8 border-[12px] border-gray-800 sticky top-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-bold text-white font-heading flex items-center">
+                        <i data-lucide="eye" class="w-5 h-5 mr-2 text-indigo-400"></i> Real-time Design Preview
+                    </h3>
+                    <div class="flex items-center space-x-3">
+                        <span class="px-3 py-1 bg-green-500/10 text-green-400 rounded-full text-[10px] font-bold uppercase tracking-widest border border-green-500/20">WYSIWYG Mode</span>
+                    </div>
+                </div>
+                
+                <div class="relative bg-black/40 rounded-2xl overflow-hidden aspect-[1.414/1] flex items-center justify-center border border-white/5 group">
+                    <canvas id="preview-canvas" class="max-w-full max-h-full shadow-2xl transition-transform duration-500 group-hover:scale-[1.01]"></canvas>
+                    <div id="no-preview" class="absolute inset-0 flex flex-col items-center justify-center text-gray-500">
+                        <i data-lucide="image" class="w-16 h-16 mb-4 opacity-20"></i>
+                        <p class="text-sm font-medium">Upload a background to begin</p>
+                    </div>
+                </div>
+
+                <div class="mt-8 p-6 bg-white/5 rounded-3xl border border-white/5 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Current coordinates</p>
+                        <p class="text-xl font-mono font-bold text-indigo-300" id="live-coords">X: 500 | Y: 500</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">PDF Resolution</p>
+                        <p class="text-sm text-gray-400">A4 Landscape (300 DPI Output)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('preview-canvas');
+    const ctx = canvas.getContext('2d');
+    const fileInput = document.getElementById('id_background_image');
+    const jsonInput = document.getElementById('id_layout_config');
+    const noPreview = document.getElementById('no-preview');
+    
+    // Controls
+    const fieldSelector = document.getElementById('field-selector');
+    const inputX = document.getElementById('input-x');
+    const inputY = document.getElementById('input-y');
+    const inputSize = document.getElementById('input-size');
+    const inputColor = document.getElementById('input-color');
+    const inputAlign = document.getElementById('input-align');
+    const inputFont = document.getElementById('input-font');
+    const inputType = document.getElementById('input-type');
+    
+    const valX = document.getElementById('val-x');
+    const valY = document.getElementById('val-y');
+    const valSize = document.getElementById('val-size');
+    const liveCoords = document.getElementById('live-coords');
+
+    let backgroundImage = null;
+    let config = { fields: [] };
+
+    function init() {
+        canvas.width = 1000;
+        canvas.height = 707;
+        
+        // Load initial JSON
+        try {
+            config = JSON.parse(jsonInput.value || '{"fields":[]}');
+            if (config.fields.length === 0) {
+                config.fields = [
+                    { type: 'participant_name', x: 500, y: 500, font: 'Helvetica-Bold', size: 48, align: 'center', color: '#1e1b4b' }
+                ];
+                updateJson();
+            }
+        } catch (e) {
+            console.error("Invalid JSON", e);
+        }
+
+        populateSelector();
+        
+        {% if template and template.background_image %}
+        const img = new Image();
+        img.onload = () => {
+            backgroundImage = img;
+            draw();
+        };
+        img.src = "{{ template.background_image.url }}";
+        {% else %}
+        draw();
+        {% endif %}
+
+        updateControlsFromSelected();
+    }
+
+    function populateSelector() {
+        const currentVal = fieldSelector.value;
+        fieldSelector.innerHTML = '';
+        config.fields.forEach((f, index) => {
+            const opt = document.createElement('option');
+            opt.value = index;
+            opt.innerText = `${f.type.toUpperCase()} #${index + 1}`;
+            fieldSelector.appendChild(opt);
+        });
+        if (currentVal < config.fields.length) fieldSelector.value = currentVal;
+    }
+
+    function updateControlsFromSelected() {
+        const index = fieldSelector.value;
+        const field = config.fields[index];
+        if (!field) return;
+
+        inputX.value = field.x;
+        inputY.value = field.y;
+        inputSize.value = field.size;
+        inputColor.value = field.color || '#000000';
+        inputAlign.value = field.align || 'center';
+        inputFont.value = field.font || 'Helvetica';
+        inputType.value = field.type || 'participant_name';
+
+        valX.innerText = field.x;
+        valY.innerText = field.y;
+        valSize.innerText = field.size;
+        liveCoords.innerText = `X: ${field.x} | Y: ${field.y}`;
+    }
+
+    function addField() {
+        const type = 'custom';
+        config.fields.push({
+            type: type,
+            x: 500,
+            y: 500,
+            font: 'Helvetica',
+            size: type === 'qr_code' ? 100 : 24,
+            align: 'center',
+            color: '#000000',
+            text: 'New Field'
+        });
+        populateSelector();
+        fieldSelector.value = config.fields.length - 1;
+        updateControlsFromSelected();
+        updateJson();
+        draw();
+    }
+
+    function removeField() {
+        if (config.fields.length <= 1) return;
+        config.fields.splice(fieldSelector.value, 1);
+        populateSelector();
+        fieldSelector.value = 0;
+        updateControlsFromSelected();
+        updateJson();
+        draw();
+    }
+
+    function updateJson() {
+        jsonInput.value = JSON.stringify(config, null, 4);
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        if (backgroundImage) {
+            noPreview.classList.add('hidden');
+            ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+        } else {
+            noPreview.classList.remove('hidden');
+            ctx.fillStyle = "#1a1a1a";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        config.fields.forEach(field => {
+            const x = (field.x || 0) * (canvas.width / 1000);
+            const y_scaled = (field.y || 0) * (canvas.height / 1000);
+            const y = canvas.height - y_scaled;
+            const fontSize = (field.size || 20) * (canvas.width / 1000);
+            
+            if (field.type === 'qr_code') {
+                // Draw a QR Placeholder box anchored at bottom-left (x, y)
+                ctx.fillStyle = '#f3f4f6';
+                ctx.strokeStyle = '#3730a3';
+                ctx.lineWidth = 2;
+                ctx.fillRect(x, y - fontSize, fontSize, fontSize);
+                ctx.strokeRect(x, y - fontSize, fontSize, fontSize);
+                
+                ctx.fillStyle = '#3730a3';
+                ctx.font = `bold ${fontSize/4}px Helvetica, Arial, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.fillText("QR CODE", x + fontSize/2, y - fontSize/2.5);
+                return;
+            }
+
+            let text = field.text || "SAMPLE";
+            if (field.type === 'participant_name') text = "MAYUR KHARAT";
+            if (field.type === 'event_name') text = "Annual Tech Summit 2026";
+            if (field.type === 'cert_id') text = "CERT-2026-ABC";
+            if (field.type === 'date') text = "May 15, 2026";
+
+            ctx.font = `${field.font && field.font.includes('Bold') ? 'bold' : ''} ${fontSize}px Helvetica, Arial, sans-serif`;
+            ctx.fillStyle = field.color || '#000000';
+            ctx.textAlign = field.align || 'center';
+            ctx.fillText(text, x, y);
+        });
+    }
+
+    // Sync one last time before submit
+    document.getElementById('template-form').onsubmit = () => {
+        updateJson();
+        return true;
+    };
+
+    fieldSelector.onchange = updateControlsFromSelected;
+
+    [inputX, inputY, inputSize].forEach(el => {
+        el.addEventListener('input', () => {
+            const field = config.fields[fieldSelector.value];
+            if (!field) return;
+            field.x = parseInt(inputX.value);
+            field.y = parseInt(inputY.value);
+            field.size = parseInt(inputSize.value);
+            valX.innerText = field.x;
+            valY.innerText = field.y;
+            valSize.innerText = field.size;
+            liveCoords.innerText = `X: ${field.x} | Y: ${field.y}`;
+            updateJson();
+            draw();
+        });
+    });
+
+    [inputColor, inputAlign, inputFont, inputType].forEach(el => {
+        el.addEventListener('change', () => {
+            const field = config.fields[fieldSelector.value];
+            if (!field) return;
+            field.color = inputColor.value;
+            field.align = inputAlign.value;
+            field.font = inputFont.value;
+            field.type = inputType.value;
+            populateSelector(); // Update name in selector if type changed
+            updateJson();
+            draw();
+        });
+    });
+
+    fileInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    backgroundImage = img;
+                    draw();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', init);
+</script>
+{% endblock %}

@@ -1,0 +1,46 @@
+services:
+  # 1. The Main Web Application
+  - type: web
+    name: centriflow-app
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: centriflow-db
+          property: connectionString
+      - key: DJANGO_SETTINGS_MODULE
+        value: "config.settings.production"
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: SITE_URL
+        value: "https://centriflow-app.onrender.com" # Update this to your real URL later
+      - key: EMAIL_BACKEND
+        value: "django.core.mail.backends.smtp.EmailBackend"
+
+  # 2. The Background Worker (Muscle)
+  - type: worker
+    name: centriflow-worker
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "python manage.py process_tasks"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: centriflow-db
+          property: connectionString
+      - key: DJANGO_SETTINGS_MODULE
+        value: "config.settings.production"
+      - key: PYTHON_VERSION
+        value: 3.10.0
+
+databases:
+  - name: centriflow-db
+    plan: free 

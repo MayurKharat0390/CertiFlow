@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Certificate - {{ certificate.certificate_id }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-12">
+    <div class="text-center mb-10">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-100 text-indigo-600 mb-4">
+            <i data-lucide="shield-check" class="w-8 h-8"></i>
+        </div>
+        <h1 class="text-3xl font-bold font-heading text-gray-900">Certificate Verification</h1>
+        <p class="text-gray-500">Official verification portal for CertiFlow credentials</p>
+    </div>
+
+    {% if not certificate.is_revoked %}
+    <div class="bg-white rounded-3xl shadow-2xl border border-green-100 overflow-hidden">
+        <div class="bg-green-500 px-8 py-4 flex items-center justify-center space-x-2 text-white">
+            <i data-lucide="check-circle" class="w-5 h-5"></i>
+            <span class="font-bold uppercase tracking-widest text-sm">Valid Credential</span>
+        </div>
+        
+        <div class="p-10 space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-4">
+                    <div>
+                        <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Certificate ID</span>
+                        <span class="text-lg font-mono font-bold text-indigo-600">{{ certificate.certificate_id }}</span>
+                    </div>
+                    <div>
+                        <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Participant Name</span>
+                        <span class="text-xl font-bold text-gray-900">{{ participant.get_full_name }}</span>
+                    </div>
+                    <div>
+                        <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Issue Date</span>
+                        <span class="text-lg font-semibold text-gray-700">{{ certificate.issue_date|date:"F d, Y" }}</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Event</span>
+                        <span class="text-lg font-bold text-gray-900">{{ event.title }}</span>
+                    </div>
+                    <div>
+                        <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Organization</span>
+                        <span class="text-lg font-semibold text-gray-700">{{ event.organization.name }}</span>
+                    </div>
+                    <div>
+                        <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Verification Status</span>
+                        <span class="inline-flex items-center text-green-600 font-bold">
+                            <i data-lucide="verified" class="w-4 h-4 mr-1"></i> Verified Authentic
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pt-8 border-t border-gray-100 text-center">
+                <p class="text-sm text-gray-500 mb-6">This certificate was digitally signed and issued through the CertiFlow platform.</p>
+                <div class="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
+                    {% if certificate.pdf_file %}
+                    <a href="{{ certificate.pdf_file.url }}" class="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-indigo-700 transition">
+                        <i data-lucide="download" class="w-4 h-4 mr-2"></i> Download Original PDF
+                    </a>
+                    {% endif %}
+                    <button onclick="window.print()" class="inline-flex items-center px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-50 transition">
+                        <i data-lucide="printer" class="w-4 h-4 mr-2"></i> Print Verification
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-3xl shadow-2xl border border-red-100 overflow-hidden">
+        <div class="bg-red-500 px-8 py-4 flex items-center justify-center space-x-2 text-white">
+            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+            <span class="font-bold uppercase tracking-widest text-sm">Revoked Credential</span>
+        </div>
+        <div class="p-10 text-center">
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">This certificate is no longer valid.</h2>
+            <p class="text-gray-500 mb-6">Reason: {{ certificate.revocation_reason|default:"The issuer has revoked this credential." }}</p>
+            <div class="p-4 bg-red-50 rounded-xl text-red-700 text-sm inline-block">
+                Verification attempted at {{ now|date:"F d, Y H:i" }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="mt-12 text-center">
+        <a href="/" class="text-sm font-bold text-gray-400 hover:text-indigo-600 flex items-center justify-center">
+            <i data-lucide="award" class="w-4 h-4 mr-2"></i> Powered by CertiFlow
+        </a>
+    </div>
+</div>
+{% endblock %}
