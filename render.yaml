@@ -13,7 +13,7 @@ services:
       - key: DJANGO_SETTINGS_MODULE
         value: "config.settings.production"
       - key: PYTHON_VERSION
-        value: "3.10.0" # Forced stable version
+        value: "3.11.7"
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG
@@ -24,8 +24,14 @@ services:
         value: "https://certiflow-v2gi.onrender.com"
       - key: EMAIL_BACKEND
         value: "django.core.mail.backends.smtp.EmailBackend"
+      - key: EMAIL_HOST
+        value: "smtp.gmail.com"
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "True"
 
-  # 2. The Background Worker
+  # 2. The Background Worker (Shared settings with Web)
   - type: worker
     name: centriflow-worker
     runtime: python
@@ -39,7 +45,16 @@ services:
       - key: DJANGO_SETTINGS_MODULE
         value: "config.settings.production"
       - key: PYTHON_VERSION
-        value: "3.10.0"
+        value: "3.11.7"
+      - key: SECRET_KEY
+        # This will be synced automatically by Render if they are in the same blueprint
+        sync: true
+      - key: EMAIL_HOST
+        value: "smtp.gmail.com"
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "True"
 
 databases:
   - name: centriflow-db
