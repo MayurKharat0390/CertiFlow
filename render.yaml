@@ -13,7 +13,7 @@ services:
       - key: DJANGO_SETTINGS_MODULE
         value: "config.settings.production"
       - key: PYTHON_VERSION
-        value: 3.10.0
+        value: "3.10.0" # Forced stable version
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG
@@ -21,11 +21,11 @@ services:
       - key: ALLOWED_HOSTS
         value: "*"
       - key: SITE_URL
-        value: "https://centriflow-app.onrender.com" # Update this to your real URL later
+        value: "https://centriflow-app.onrender.com"
       - key: EMAIL_BACKEND
         value: "django.core.mail.backends.smtp.EmailBackend"
 
-  # 2. The Background Worker (Muscle)
+  # 2. The Background Worker
   - type: worker
     name: centriflow-worker
     runtime: python
@@ -39,7 +39,7 @@ services:
       - key: DJANGO_SETTINGS_MODULE
         value: "config.settings.production"
       - key: PYTHON_VERSION
-        value: 3.10.0
+        value: "3.10.0"
 
 databases:
   - name: centriflow-db
