@@ -6,7 +6,7 @@ dj-database-url==2.1.0
 python-decouple==3.8
 reportlab==4.4.0
 qrcode==8.2
-Pillow==10.0.0
+Pillow>=10.3.0
 django-crispy-forms==2.5
 crispy-tailwind==1.0.3
 django-allauth==0.61.1
