@@ -182,11 +182,16 @@
         <div class="px-10 py-7 border-b border-white/5 flex justify-between items-center bg-white/5">
             <h3 class="text-xl font-bold text-white font-heading">Participant Roster</h3>
             <div class="flex items-center space-x-4">
-                <div class="relative hidden md:block">
-                    <input type="text" placeholder="Search by ID or Email..." class="bg-white/5 border border-white/10 rounded-xl px-10 py-2.5 text-xs text-white focus:ring-indigo-500 focus:border-indigo-500 w-64">
+                <form method="GET" class="relative hidden md:block">
+                    <input type="text" name="search" value="{{ search_query|default:'' }}" placeholder="Search by ID or Email..." class="bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:ring-indigo-500 focus:border-indigo-500 w-64">
                     <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3.5 top-3"></i>
-                </div>
-                <button class="btn-glass px-4 py-2.5 rounded-xl text-xs font-bold">View full list</button>
+                    {% if search_query %}
+                    <a href="{% url 'events:event_detail' event.id %}" class="absolute right-3.5 top-3 text-slate-500 hover:text-white">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </a>
+                    {% endif %}
+                </form>
+                <a href="{% url 'events:event_detail' event.id %}" class="btn-glass px-4 py-2.5 rounded-xl text-xs font-bold">View full list</a>
             </div>
         </div>
         <div class="overflow-x-auto">
@@ -222,8 +227,12 @@
                             </span>
                         </td>
                         <td class="px-10 py-6 whitespace-nowrap text-right">
-                            <button class="p-2 text-slate-500 hover:text-indigo-400 transition-colors"><i data-lucide="eye" class="w-5 h-5"></i></button>
-                            <button class="p-2 text-slate-500 hover:text-red-400 transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                            <a href="{% url 'events:email_single_participant' event.id reg.id %}" title="Send Email" class="inline-block p-2 text-slate-500 hover:text-indigo-400 transition-colors"><i data-lucide="mail" class="w-5 h-5"></i></a>
+                            <a href="{% url 'events:issue_single_certificate' event.id reg.id %}" title="Issue Certificate" class="inline-block p-2 text-slate-500 hover:text-emerald-400 transition-colors"><i data-lucide="award" class="w-5 h-5"></i></a>
+                            <form action="{% url 'events:remove_participant' event.id reg.id %}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to remove this participant?');">
+                                {% csrf_token %}
+                                <button type="submit" title="Remove Participant" class="p-2 text-slate-500 hover:text-red-400 transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                            </form>
                         </td>
                     </tr>
                     {% empty %}

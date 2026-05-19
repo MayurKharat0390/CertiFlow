@@ -39,10 +39,21 @@ def event_list(request):
 @login_required
 def event_detail(request, pk):
     from certificates.models import Certificate
-    from django.db.models import Sum
+    from django.db.models import Sum, Q
     
     event = get_object_or_404(Event, id=pk)
-    registrations = event.registrations.all().order_by('-registration_date')[:10]
+    registrations = event.registrations.all().order_by('-registration_date')
+    
+    search_query = request.GET.get('search', '').strip()
+    if search_query:
+        registrations = registrations.filter(
+            Q(user__first_name__icontains=search_query) |
+            Q(user__last_name__icontains=search_query) |
+            Q(user__email__icontains=search_query) |
+            Q(participant_id__icontains=search_query)
+        )
+    else:
+        registrations = registrations[:50]
     
     # Certificate Stats
     certificates = Certificate.objects.filter(registration__event=event)
@@ -55,7 +66,8 @@ def event_detail(request, pk):
     return render(request, 'events/event_detail.html', {
         'event': event,
         'registrations': registrations,
-        'cert_stats': cert_stats
+        'cert_stats': cert_stats,
+        'search_query': search_query
     })
 
 @login_required
@@ -283,3 +295,96 @@ def import_participants(request, pk):
             return redirect('events:import_participants', pk=pk)
             
     return render(request, 'events/import_participants.html', {'event': event})
+
+@login_required
+def remove_participant(request, event_id, reg_id):
+    from registrations.models import Registration
+    event = get_object_or_404(Event, id=event_id)
+    registration = get_object_or_404(Registration, id=reg_id, event=event)
+    
+    if request.user.role not in ['admin', 'event_manager', 'super_admin', 'org_admin']:
+        messages.error(request, "Permission denied.")
+        return redirect('events:event_detail', pk=event.id)
+        
+    registration.delete()
+    messages.success(request, "Participant removed successfully.")
+    return redirect('events:event_detail', pk=event.id)
+
+@login_required
+def email_single_participant(request, event_id, reg_id):
+    from registrations.models import Registration
+    from notifications.models import EmailLog
+    from certificates.models import Certificate
+    from config.task_utils import trigger_background_tasks
+    
+    event = get_object_or_404(Event, id=event_id)
+    registration = get_object_or_404(Registration, id=reg_id, event=event)
+    
+    if request.user.role not in ['admin', 'event_manager', 'super_admin', 'org_admin']:
+        messages.error(request, "Permission denied.")
+        return redirect('events:event_detail', pk=event.id)
+        
+    if request.method == 'POST':
+        subject_template = request.POST.get('subject')
+        message_template = request.POST.get('message')
+        attach_cert = request.POST.get('attach_certificate') == 'on'
+        
+        name = registration.user.get_full_name()
+        subject = subject_template.replace('{{ name }}', name)
+        body_text = message_template.replace('{{ name }}', name)
+        
+        attachment = None
+        if attach_cert:
+            cert = Certificate.objects.filter(registration=registration, status='completed').first()
+            if cert and cert.pdf_file:
+                attachment = cert.pdf_file
+        
+        EmailLog.objects.create(
+            organization=event.organization,
+            recipient_user=registration.user,
+            recipient_email=registration.user.email,
+            subject=subject,
+            body_text=body_text,
+            attachment=attachment,
+            email_type='event_update'
+        )
+        
+        trigger_background_tasks()
+        messages.success(request, f"Email queued for {name}.")
+        return redirect('events:event_detail', pk=event.id)
+        
+    return render(request, 'events/email_compose.html', {
+        'event': event,
+        'recipient_count': 1,
+        'single_registration': registration
+    })
+
+@login_required
+def issue_single_certificate(request, event_id, reg_id):
+    from registrations.models import Registration
+    from certificates.models import Certificate
+    from certificates.tasks import generate_certificate_task
+    
+    event = get_object_or_404(Event, id=event_id)
+    registration = get_object_or_404(Registration, id=reg_id, event=event)
+    
+    if request.user.role not in ['admin', 'event_manager', 'super_admin', 'org_admin']:
+        messages.error(request, "Permission denied.")
+        return redirect('events:event_detail', pk=event.id)
+    
+    # Issue certificate
+    template = event.organization.certificatetemplate_set.filter(is_active=True).first()
+    if not template:
+        messages.error(request, "No active certificate template found for this organization.")
+        return redirect('events:event_detail', pk=event.id)
+        
+    cert, created = Certificate.objects.get_or_create(
+        registration=registration,
+        template=template,
+        defaults={'status': 'pending'}
+    )
+    
+    generate_certificate_task.delay(cert.id)
+    messages.success(request, f"Certificate generation queued for {registration.user.get_full_name()}.")
+    return redirect('events:event_detail', pk=event.id)
+
