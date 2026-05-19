@@ -1,88 +1,88 @@
 {% extends "base.html" %}
 
-{% block title %}Login{% endblock %}
+{% block title %}Sign In{% endblock %}
 
 {% block content %}
-<div class="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+<div class="min-h-[80vh] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+    <!-- Decorative background glow -->
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 w-[600px] h-[600px] bg-emerald-600/10 rounded-full blur-[120px]"></div>
+
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
         <div class="flex justify-center">
-            <div class="w-12 h-12 gradient-bg rounded-xl flex items-center justify-center text-white">
-                <i data-lucide="award" class="w-8 h-8"></i>
+            <div class="w-16 h-16 bg-indigo-600 rounded-[1.5rem] flex items-center justify-center text-white shadow-2xl shadow-indigo-600/40 hover:scale-110 transition-transform">
+                <i data-lucide="award" class="w-10 h-10"></i>
             </div>
         </div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 font-heading">
-            Sign in to CertiFlow
+        <h2 class="mt-8 text-center text-4xl font-black text-white font-heading tracking-tight text-glow">
+            Access Protocol
         </h2>
-        <p class="mt-2 text-center text-sm text-gray-600">
-            Or
-            <a href="{% url 'accounts:signup' %}" class="font-medium text-indigo-600 hover:text-indigo-500">
-                create a new account
+        <p class="mt-3 text-center text-sm text-slate-400 font-medium">
+            New to the matrix?
+            <a href="{% url 'accounts:signup' %}" class="font-bold text-indigo-400 hover:text-indigo-300 transition-colors">
+                Initialize Account
             </a>
         </p>
     </div>
 
-    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div class="bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-100">
-            <form class="space-y-6" method="POST">
+    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="glass-card py-10 px-6 shadow-2xl sm:rounded-[3rem] sm:px-12 border-white/5">
+            <form class="space-y-8" method="POST">
                 {% csrf_token %}
                 {% for field in form %}
-                <div>
-                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                <div class="space-y-2">
+                    <label for="{{ field.id_for_label }}" class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">
                         {{ field.label }}
                     </label>
                     <div class="mt-1">
                         {{ field }}
                     </div>
                     {% if field.errors %}
-                        <p class="mt-2 text-sm text-red-600">{{ field.errors.0 }}</p>
+                        <p class="mt-2 text-[10px] font-bold text-red-400 ml-1">{{ field.errors.0 }}</p>
                     {% endif %}
                 </div>
                 {% endfor %}
 
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between px-1">
                     <div class="flex items-center">
-                        <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                        <label for="remember-me" class="ml-2 block text-sm text-gray-900">
-                            Remember me
+                        <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 bg-white/5 border-white/10 rounded text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-900 transition-all">
+                        <label for="remember-me" class="ml-3 block text-xs font-bold text-slate-400">
+                            Stay Signed In
                         </label>
                     </div>
 
-                    <div class="text-sm">
-                        <a href="#" class="font-medium text-indigo-600 hover:text-indigo-500">
-                            Forgot your password?
+                    <div class="text-xs">
+                        <a href="#" class="font-bold text-indigo-400 hover:text-indigo-300 transition-colors">
+                            Recover Access
                         </a>
                     </div>
                 </div>
 
                 <div>
-                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white gradient-bg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150">
-                        Sign in
+                    <button type="submit" class="w-full flex justify-center py-4 px-4 bg-indigo-600 text-white rounded-2xl text-sm font-black shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 hover:-translate-y-0.5 transition-all">
+                        Authenticate
                     </button>
                 </div>
             </form>
 
-            <div class="mt-6">
+            <div class="mt-10">
                 <div class="relative">
                     <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-gray-300"></div>
+                        <div class="w-full border-t border-white/5"></div>
                     </div>
                     <div class="relative flex justify-center text-sm">
-                        <span class="px-2 bg-white text-gray-500">
-                            Or continue with
+                        <span class="px-4 bg-transparent text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                            Alternative Matrix
                         </span>
                     </div>
                 </div>
 
-                <div class="mt-6 grid grid-cols-1 gap-3">
-                    <div>
-                        <a href="#" class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                            <span class="sr-only">Sign in with Google</span>
-                            <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.9 3.34-2.04 4.48-1.28 1.28-3.32 2.22-6.54 2.22-5.46 0-9.66-4.38-9.66-9.84s4.2-9.84 9.66-9.84c3.08 0 5.34 1.12 7.02 2.76l2.32-2.32C18.84 1.62 15.96 0 12.48 0 5.86 0 .3 5.38.3 12s5.56 12 12.18 12c3.58 0 6.28-1.16 8.36-3.32 2.14-2.14 2.82-5.14 2.82-7.74 0-.62-.06-1.22-.16-1.82h-11.02z" />
-                            </svg>
-                            <span class="ml-2">Google</span>
-                        </a>
-                    </div>
+                <div class="mt-8 grid grid-cols-1 gap-3">
+                    <a href="#" class="btn-glass w-full inline-flex justify-center py-3.5 px-4 rounded-2xl text-sm font-bold items-center">
+                        <svg class="w-5 h-5 mr-3" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.9 3.34-2.04 4.48-1.28 1.28-3.32 2.22-6.54 2.22-5.46 0-9.66-4.38-9.66-9.84s4.2-9.84 9.66-9.84c3.08 0 5.34 1.12 7.02 2.76l2.32-2.32C18.84 1.62 15.96 0 12.48 0 5.86 0 .3 5.38.3 12s5.56 12 12.18 12c3.58 0 6.28-1.16 8.36-3.32 2.14-2.14 2.82-5.14 2.82-7.74 0-.62-.06-1.22-.16-1.82h-11.02z" />
+                        </svg>
+                        Google Neural Auth
+                    </a>
                 </div>
             </div>
         </div>

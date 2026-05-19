@@ -38,11 +38,24 @@ def event_list(request):
 
 @login_required
 def event_detail(request, pk):
+    from certificates.models import Certificate
+    from django.db.models import Sum
+    
     event = get_object_or_404(Event, id=pk)
     registrations = event.registrations.all().order_by('-registration_date')[:10]
+    
+    # Certificate Stats
+    certificates = Certificate.objects.filter(registration__event=event)
+    cert_stats = {
+        'total_issued': certificates.count(),
+        'total_views': certificates.aggregate(Sum('view_count'))['view_count__sum'] or 0,
+        'total_downloads': certificates.aggregate(Sum('download_count'))['download_count__sum'] or 0,
+    }
+    
     return render(request, 'events/event_detail.html', {
         'event': event,
-        'registrations': registrations
+        'registrations': registrations,
+        'cert_stats': cert_stats
     })
 
 @login_required
@@ -217,14 +230,18 @@ def import_participants(request, pk):
             
             created_count = 0
             for row in reader:
-                # Expected headers: 'Full Name', 'Email'
-                full_name = row.get('Full Name', '').strip()
-                email = row.get('Email', '').strip().lower()
+                # Look for common name headers
+                full_name = row.get('Full Name') or row.get('Name') or row.get('Student Name') or row.get('Participant') or ''
+                full_name = full_name.strip()
+                
+                # Look for common email headers
+                email = row.get('Email') or row.get('Email Address') or row.get('Student Email') or ''
+                email = email.strip().lower()
                 
                 if not email:
                     continue
                     
-                # Create user if doesn't exist
+                # Parse first and last name
                 first_name = full_name.split(' ')[0] if ' ' in full_name else full_name
                 last_name = ' '.join(full_name.split(' ')[1:]) if ' ' in full_name else ''
                 
@@ -238,6 +255,12 @@ def import_participants(request, pk):
                 )
                 if u_created:
                     user.set_unusable_password()
+                    user.save()
+                elif full_name:
+                    # Update existing user's name if they were imported previously without one
+                    # or if the CSV is providing a more accurate name for this event.
+                    user.first_name = first_name
+                    user.last_name = last_name
                     user.save()
                 
                 # Create Registration

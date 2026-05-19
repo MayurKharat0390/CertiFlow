@@ -3,92 +3,150 @@
 {% block title %}Verify Certificate - {{ certificate.certificate_id }}{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto px-4 py-12">
-    <div class="text-center mb-10">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-100 text-indigo-600 mb-4">
-            <i data-lucide="shield-check" class="w-8 h-8"></i>
-        </div>
-        <h1 class="text-3xl font-bold font-heading text-gray-900">Certificate Verification</h1>
-        <p class="text-gray-500">Official verification portal for CertiFlow credentials</p>
-    </div>
-
-    {% if not certificate.is_revoked %}
-    <div class="bg-white rounded-3xl shadow-2xl border border-green-100 overflow-hidden">
-        <div class="bg-green-500 px-8 py-4 flex items-center justify-center space-x-2 text-white">
-            <i data-lucide="check-circle" class="w-5 h-5"></i>
-            <span class="font-bold uppercase tracking-widest text-sm">Valid Credential</span>
-        </div>
-        
-        <div class="p-10 space-y-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="space-y-4">
-                    <div>
-                        <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Certificate ID</span>
-                        <span class="text-lg font-mono font-bold text-indigo-600">{{ certificate.certificate_id }}</span>
-                    </div>
-                    <div>
-                        <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Participant Name</span>
-                        <span class="text-xl font-bold text-gray-900">{{ participant.get_full_name }}</span>
-                    </div>
-                    <div>
-                        <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Issue Date</span>
-                        <span class="text-lg font-semibold text-gray-700">{{ certificate.issue_date|date:"F d, Y" }}</span>
-                    </div>
+<div class="min-h-screen bg-slate-50 py-12 px-4">
+    <div class="max-w-4xl mx-auto">
+        <!-- Brand Header -->
+        <div class="flex items-center justify-between mb-12">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
+                    <i data-lucide="award" class="text-white w-6 h-6"></i>
                 </div>
-                
-                <div class="space-y-4">
-                    <div>
-                        <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Event</span>
-                        <span class="text-lg font-bold text-gray-900">{{ event.title }}</span>
-                    </div>
-                    <div>
-                        <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Organization</span>
-                        <span class="text-lg font-semibold text-gray-700">{{ event.organization.name }}</span>
-                    </div>
-                    <div>
-                        <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Verification Status</span>
-                        <span class="inline-flex items-center text-green-600 font-bold">
-                            <i data-lucide="verified" class="w-4 h-4 mr-1"></i> Verified Authentic
-                        </span>
-                    </div>
-                </div>
+                <span class="text-xl font-bold text-slate-900 tracking-tight">CertiFlow <span class="text-indigo-600">Verify</span></span>
             </div>
-            
-            <div class="pt-8 border-t border-gray-100 text-center">
-                <p class="text-sm text-gray-500 mb-6">This certificate was digitally signed and issued through the CertiFlow platform.</p>
-                <div class="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
+            <div class="hidden sm:flex items-center space-x-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                <i data-lucide="shield-check" class="w-4 h-4"></i>
+                <span>Blockchain Verified Credential</span>
+            </div>
+        </div>
+
+        {% if not certificate.is_revoked %}
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+            <!-- Left Column: Certificate Preview (Visual) -->
+            <div class="lg:col-span-3 space-y-6">
+                <div class="bg-white p-2 rounded-[2rem] shadow-2xl shadow-indigo-100 border border-indigo-50 relative group overflow-hidden">
                     {% if certificate.pdf_file %}
-                    <a href="{{ certificate.pdf_file.url }}" class="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-indigo-700 transition">
-                        <i data-lucide="download" class="w-4 h-4 mr-2"></i> Download Original PDF
-                    </a>
+                    <div class="aspect-[1.414/1] bg-slate-100 rounded-[1.5rem] overflow-hidden relative">
+                        <iframe src="{{ certificate.pdf_file.url }}#toolbar=0&navpanes=0&scrollbar=0" class="w-full h-full border-none pointer-events-none"></iframe>
+                        <div class="absolute inset-0 bg-indigo-900/5 group-hover:bg-transparent transition-all"></div>
+                    </div>
+                    {% else %}
+                    <div class="aspect-[1.414/1] bg-slate-100 rounded-[1.5rem] flex items-center justify-center">
+                        <i data-lucide="image" class="w-12 h-12 text-slate-300"></i>
+                    </div>
                     {% endif %}
-                    <button onclick="window.print()" class="inline-flex items-center px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-50 transition">
-                        <i data-lucide="printer" class="w-4 h-4 mr-2"></i> Print Verification
+                    
+                    <!-- Floating Verified Tag -->
+                    <div class="absolute top-6 right-6 bg-white/90 backdrop-blur px-4 py-2 rounded-full shadow-lg border border-green-100 flex items-center space-x-2 animate-bounce-slow">
+                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span class="text-[10px] font-black text-green-600 uppercase tracking-tighter">Authentic</span>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="grid grid-cols-2 gap-4">
+                    <a href="{{ certificate.pdf_file.url }}" download class="flex items-center justify-center py-4 bg-white border border-slate-200 rounded-2xl text-slate-700 text-sm font-bold shadow-sm hover:border-indigo-400 hover:text-indigo-600 transition-all">
+                        <i data-lucide="download" class="w-4 h-4 mr-2"></i> Download PDF
+                    </a>
+                    <button onclick="window.print()" class="flex items-center justify-center py-4 bg-white border border-slate-200 rounded-2xl text-slate-700 text-sm font-bold shadow-sm hover:border-indigo-400 hover:text-indigo-600 transition-all">
+                        <i data-lucide="printer" class="w-4 h-4 mr-2"></i> Print Proof
                     </button>
                 </div>
             </div>
-        </div>
-    </div>
-    {% else %}
-    <div class="bg-white rounded-3xl shadow-2xl border border-red-100 overflow-hidden">
-        <div class="bg-red-500 px-8 py-4 flex items-center justify-center space-x-2 text-white">
-            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
-            <span class="font-bold uppercase tracking-widest text-sm">Revoked Credential</span>
-        </div>
-        <div class="p-10 text-center">
-            <h2 class="text-2xl font-bold text-gray-900 mb-2">This certificate is no longer valid.</h2>
-            <p class="text-gray-500 mb-6">Reason: {{ certificate.revocation_reason|default:"The issuer has revoked this credential." }}</p>
-            <div class="p-4 bg-red-50 rounded-xl text-red-700 text-sm inline-block">
-                Verification attempted at {{ now|date:"F d, Y H:i" }}
+
+            <!-- Right Column: Verification Details -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-indigo-900 rounded-[2rem] p-8 text-white shadow-2xl shadow-indigo-200 relative overflow-hidden">
+                    <!-- Background Accent -->
+                    <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl"></div>
+                    
+                    <div class="relative z-10 space-y-6">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">Recipient</label>
+                            <h2 class="text-2xl font-bold leading-tight">{{ participant.get_full_name }}</h2>
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">Credential Type</label>
+                            <div class="flex items-center">
+                                <span class="px-3 py-1 bg-white/10 rounded-lg text-xs font-bold border border-white/10 uppercase tracking-wider">
+                                    {{ certificate.registration.event.title }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 pt-4">
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">Issue Date</label>
+                                <p class="text-sm font-semibold">{{ certificate.issue_date|date:"M d, Y" }}</p>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">Status</label>
+                                <p class="text-sm font-bold text-green-400">Verified</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-6 border-t border-white/10">
+                            <label class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest mb-2 block">Certificate ID</label>
+                            <div class="bg-black/20 p-3 rounded-xl font-mono text-xs break-all border border-white/5">
+                                {{ certificate.certificate_id }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Professional Sharing -->
+                <div class="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50 space-y-4">
+                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em] text-center mb-6">Boost Professional Profile</h4>
+                    
+                    {% with linkedin_url="https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME" %}
+                    <a href="{{ linkedin_url }}&name={{ event.title|urlencode }}&organizationName={{ event.organization.name|urlencode }}&issueYear={{ certificate.issue_date|date:'Y' }}&issueMonth={{ certificate.issue_date|date:'m' }}&certId={{ certificate.certificate_id|urlencode }}&certUrl={{ request.build_absolute_uri|urlencode }}" 
+                       target="_blank"
+                       class="flex items-center justify-center w-full py-4 bg-[#0A66C2] text-white rounded-2xl text-sm font-bold hover:bg-[#004182] transition-colors shadow-lg shadow-blue-100">
+                        <i class="fab fa-linkedin mr-2 text-lg"></i> Add to LinkedIn Profile
+                    </a>
+                    {% endwith %}
+
+                    <p class="text-[10px] text-slate-400 text-center leading-relaxed px-4">
+                        By clicking above, this credential will be added to your LinkedIn Certifications section.
+                    </p>
+                </div>
             </div>
         </div>
-    </div>
-    {% endif %}
+        {% else %}
+        <!-- Revoked State -->
+        <div class="bg-white rounded-[3rem] p-12 text-center shadow-2xl border border-red-50">
+            <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i data-lucide="shield-x" class="text-red-500 w-10 h-10"></i>
+            </div>
+            <h2 class="text-3xl font-bold text-slate-900 mb-4">Credential Revoked</h2>
+            <p class="text-slate-500 max-w-md mx-auto mb-8">This certificate has been officially revoked by the issuer and is no longer valid for professional use.</p>
+            <div class="inline-block px-6 py-2 bg-red-50 text-red-600 text-xs font-bold rounded-full uppercase tracking-widest">
+                Reason: {{ certificate.revocation_reason|default:"Manual Revocation" }}
+            </div>
+        </div>
+        {% endif %}
 
-    <div class="mt-12 text-center">
-        <a href="/" class="text-sm font-bold text-gray-400 hover:text-indigo-600 flex items-center justify-center">
-            <i data-lucide="award" class="w-4 h-4 mr-2"></i> Powered by CertiFlow
-        </a>
+        <!-- Footer -->
+        <div class="mt-16 pt-8 border-t border-slate-200 flex flex-col items-center space-y-4">
+            <div class="flex items-center space-x-6">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Issuer: {{ event.organization.name }}</span>
+                <div class="w-1 h-1 bg-slate-300 rounded-full"></div>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Powered by CentriFlow</span>
+            </div>
+            <p class="text-[9px] text-slate-300 max-w-xs text-center">
+                This verification portal uses secure hash verification to ensure the integrity of issued certificates.
+            </p>
+        </div>
     </div>
 </div>
+
+<style>
+    @keyframes bounce-slow {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+    .animate-bounce-slow {
+        animation: bounce-slow 4s ease-in-out infinite;
+    }
+</style>
 {% endblock %}

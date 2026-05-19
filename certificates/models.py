@@ -15,18 +15,25 @@ class CertificateTemplate(models.Model):
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='certificate_templates')
-    category = models.ForeignKey(CertificateCategory, on_delete=models.CASCADE, related_name='templates')
     
     name = models.CharField(max_length=200)
     background_image = models.ImageField(upload_to='cert_templates/')
     
     # Designer data (JSON storing positions of dynamic fields like { "name": {"x": 100, "y": 200, "font_size": 24}, ... })
-    layout_config = models.JSONField(default=dict)
+    class Category(models.TextChoices):
+        PARTICIPANT = 'participant', _('Participant')
+        SPEAKER = 'speaker', _('Speaker')
+        WINNER = 'winner', _('Winner')
+        OTHER = 'other', _('Other')
+
+    category = models.CharField(max_length=20, choices=Category.choices, default=Category.PARTICIPANT)
+    layout_config = models.JSONField(default=dict, blank=True)
     
     # CSS for the PDF generation (if using WeasyPrint) or styles for ReportLab
     custom_styles = models.TextField(blank=True)
     
     is_active = models.BooleanField(default=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -48,6 +55,8 @@ class Certificate(models.Model):
     
     issue_date = models.DateTimeField(auto_now_add=True)
     issued_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='certificates_issued')
+    view_count = models.PositiveIntegerField(default=0)
+    download_count = models.PositiveIntegerField(default=0)
     
     class Status(models.TextChoices):
         PENDING = 'pending', _('Pending')

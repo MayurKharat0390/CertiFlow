@@ -4,7 +4,7 @@ from django.utils import timezone
 from .models import EmailLog
 
 @shared_task
-def send_queued_emails(limit=100):
+def send_queued_emails(limit=500):
     """Celery task to send queued emails"""
     pending_emails = EmailLog.objects.filter(
         status=EmailLog.Status.QUEUED
@@ -13,10 +13,16 @@ def send_queued_emails(limit=100):
     count = 0
     for email_log in pending_emails:
         try:
+            from django.conf import settings
+            
+            # Set sender name to the requested GDGC PCCOE
+            sender_name = "GDGC PCCOE"
+            from_email = f"{sender_name} <{settings.EMAIL_HOST_USER}>"
+
             msg = EmailMultiAlternatives(
                 subject=email_log.subject,
                 body=email_log.body_text,
-                from_email=None,
+                from_email=from_email,
                 to=[email_log.recipient_email]
             )
             if email_log.body_html:

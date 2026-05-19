@@ -4,22 +4,24 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
+        <!-- Decorative background glow -->
+        <div class="absolute -top-20 -left-20 -z-10 w-96 h-96 bg-indigo-600/10 rounded-full blur-[100px]"></div>
+
         <!-- Left: Configuration & Controls (4/12) -->
         <div class="lg:col-span-4 space-y-6">
-            <div class="bg-white shadow-xl rounded-3xl border border-gray-100 overflow-hidden">
-                <div class="px-6 py-4 bg-indigo-600">
-                    <h1 class="text-xl font-bold text-white font-heading">{{ title }}</h1>
+            <div class="glass-card shadow-2xl rounded-[2.5rem] border-white/5 overflow-hidden">
+                <div class="px-8 py-6 bg-indigo-600">
+                    <h1 class="text-xl font-black text-white font-heading tracking-tight uppercase">{{ title }}</h1>
                 </div>
                 
-                <form id="template-form" method="POST" enctype="multipart/form-data" class="p-6 space-y-6">
+                <form id="template-form" method="POST" enctype="multipart/form-data" class="p-8 space-y-8">
                     {% csrf_token %}
                     
                     {% if form.errors %}
-                    <div class="p-4 mb-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg">
-                        <p class="font-bold mb-1">Validation Error:</p>
-                        <ul class="list-disc list-inside text-xs">
+                    <div class="p-4 mb-4 bg-red-500/10 border-l-4 border-red-500 text-red-400 rounded-xl text-xs font-bold">
+                        <p class="mb-1">Protocol Violation:</p>
+                        <ul class="list-disc list-inside">
                             {% for field, errors in form.errors.items %}
                                 {% for error in errors %}
                                     <li>{{ field }}: {{ error }}</li>
@@ -30,69 +32,65 @@
                     {% endif %}
                     
                     <!-- Basic Info -->
-                    <div class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Template Identity</label>
+                            {{ form.name }}
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Template Name</label>
-                                {{ form.name }}
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Event</label>
+                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Event Matrix</label>
                                 {{ form.event }}
                             </div>
                             <div>
-                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Category</label>
+                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Tier</label>
                                 {{ form.category }}
                             </div>
                         </div>
                     </div>
 
                     <!-- Background Upload -->
-                    <div class="space-y-2">
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Background Design</label>
-                        <div class="relative group border-2 border-dashed border-gray-200 rounded-2xl p-4 hover:border-indigo-400 transition-colors bg-gray-50/50">
-                            <div class="flex items-center space-x-3">
-                                <i data-lucide="image" class="h-5 w-5 text-gray-400"></i>
-                                <span class="text-xs font-medium text-gray-600">Upload Landscape PNG/JPG</span>
+                    <div class="space-y-3">
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Background Architecture</label>
+                        <div class="relative group border-2 border-dashed border-white/10 rounded-[1.5rem] p-6 hover:border-indigo-500/50 transition-all bg-white/5">
+                            <div class="flex flex-col items-center justify-center space-y-2">
+                                <i data-lucide="image" class="h-6 w-6 text-indigo-400"></i>
+                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Upload Landscape PNG/JPG</span>
                             </div>
                             <input id="id_background_image" name="background_image" type="file" class="absolute inset-0 opacity-0 cursor-pointer" accept="image/*">
                         </div>
                     </div>
 
                     <!-- Visual Field Controls -->
-                    <div class="pt-6 border-t border-gray-100">
-                        <div class="flex items-center justify-between mb-4">
-                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fields Editor</label>
+                    <div class="pt-8 border-t border-white/5 space-y-6">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Neural Field Editor</label>
                             <div class="flex space-x-2">
-                                <button type="button" onclick="addField()" class="p-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100" title="Add New Field">
+                                <button type="button" onclick="addField()" class="btn-glass p-2 rounded-xl text-emerald-400 border-emerald-500/20" title="Add Field">
                                     <i data-lucide="plus" class="w-4 h-4"></i>
                                 </button>
-                                <button type="button" onclick="removeField()" class="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100" title="Remove Selected Field">
+                                <button type="button" onclick="removeField()" class="btn-glass p-2 rounded-xl text-red-400 border-red-500/20" title="Delete Field">
                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                                 </button>
                             </div>
                         </div>
                         
-                        <div class="mb-4">
-                            <select id="field-selector" class="w-full text-xs font-bold text-indigo-600 bg-indigo-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-indigo-200">
-                                <!-- Options populated by JS -->
-                            </select>
-                        </div>
+                        <select id="field-selector" class="w-full text-xs font-black text-white bg-white/5 border-white/10 rounded-xl py-3.5 px-5 focus:ring-2 focus:ring-indigo-500/50 appearance-none cursor-pointer">
+                            <!-- Options populated by JS -->
+                        </select>
 
-                        <div id="controls-panel" class="space-y-5 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <div id="controls-panel" class="space-y-6 p-6 bg-black/20 rounded-[2rem] border border-white/5">
                             <!-- Field Type -->
-                            <div class="grid grid-cols-1 gap-4">
-                                <div>
-                                    <span class="block text-[10px] font-bold text-gray-500 uppercase mb-2">Field Type</span>
-                                    <select id="input-type" class="w-full text-xs font-bold border-gray-200 rounded-lg">
-                                        <option value="participant_name">Participant Name</option>
-                                        <option value="event_name">Event Name</option>
-                                        <option value="cert_id">Certificate ID</option>
-                                        <option value="date">Issue Date</option>
-                                        <option value="qr_code">Verification QR Code</option>
-                                        <option value="custom">Custom Text</option>
-                                    </select>
-                                </div>
+                            <div>
+                                <span class="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3">Core Identity</span>
+                                <select id="input-type" class="w-full text-xs font-bold bg-white/5 border-white/10 rounded-xl text-white">
+                                    <option value="participant_name">Participant Name</option>
+                                    <option value="event_name">Event Name</option>
+                                    <option value="cert_id">Credential ID</option>
+                                    <option value="date">Issue Date</option>
+                                    <option value="qr_code">Verification QR</option>
+                                    <option value="custom">Custom Intel</option>
+                                </select>
                             </div>
 
                             <!-- X Position -->

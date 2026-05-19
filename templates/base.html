@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-gray-50">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,121 +21,252 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
         body {
             font-family: 'Inter', sans-serif;
+            background: radial-gradient(at 0% 0%, hsla(222, 47%, 11%, 1) 0, transparent 50%), 
+                        radial-gradient(at 50% 0%, hsla(210, 40%, 8%, 1) 0, transparent 50%), 
+                        radial-gradient(at 100% 0%, hsla(160, 50%, 15%, 1) 0, transparent 50%);
+            background-color: #020617;
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #f8fafc;
         }
+
         h1, h2, h3, h4, .font-heading {
             font-family: 'Outfit', sans-serif;
         }
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
         }
-        .gradient-text {
-            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .gradient-bg {
-            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+
+        .glass-card:hover {
+            background: rgba(30, 41, 59, 0.7);
+            border-color: rgba(16, 185, 129, 0.4);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
         }
-        
+
+        .text-glow {
+            text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+        }
+
+        .btn-glass {
+            background: rgba(16, 185, 129, 0.1);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            transition: all 0.2s ease;
+        }
+
+        .btn-glass:hover {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: rgba(16, 185, 129, 0.5);
+            color: #6ee7b7;
+            transform: scale(1.05);
+        }
+
+        /* Override standard tailwind for professional emerald feel */
+        .bg-white { background-color: rgba(15, 23, 42, 0.4) !important; backdrop-filter: blur(8px); }
+        .text-gray-900 { color: #f8fafc !important; }
+        .text-gray-700 { color: #cbd5e1 !important; }
+        .text-gray-500 { color: #94a3b8 !important; }
+        .text-gray-400 { color: #64748b !important; }
+        .border-gray-100, .border-gray-200 { border-color: rgba(255, 255, 255, 0.08) !important; }
+        .bg-gray-50 { background-color: transparent !important; }
+        .bg-indigo-600 { background-color: #059669 !important; }
+        .hover\:bg-indigo-700:hover { background-color: #047857 !important; }
+        .text-indigo-600, .text-indigo-500 { color: #34d399 !important; }
+        .bg-indigo-500 { background-color: #10b981 !important; }
+        .bg-indigo-100 { background-color: rgba(16, 185, 129, 0.1) !important; }
+        .text-indigo-400 { color: #6ee7b7 !important; }
+
+        /* Global Form Styling for Dark Mode */
+        input, textarea, select {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
+            border-radius: 0.75rem !important;
+            padding: 0.75rem 1rem !important;
+            transition: all 0.2s ease !important;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none !important;
+            border-color: #6366f1 !important;
+            background-color: rgba(255, 255, 255, 0.08) !important;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1) !important;
+        }
+
+        /* Placeholder styling */
+        ::placeholder {
+            color: rgba(255, 255, 255, 0.4) !important;
+        }
+
+        /* Override Tailwind's default focus ring */
+        .focus\:ring-indigo-500:focus {
+            --tw-ring-color: rgba(99, 102, 241, 0.4) !important;
+        }
+
+        /* 3D Floating Orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.15;
+            animation: float 20s infinite alternate-reverse ease-in-out;
+            pointer-events: none;
+        }
+
+        .orb-1 { width: 400px; height: 400px; background: #10b981; top: -100px; left: -100px; animation-duration: 25s; }
+        .orb-2 { width: 350px; height: 350px; background: #06b6d4; bottom: -50px; right: 10%; animation-duration: 30s; animation-delay: -5s; }
+        .orb-3 { width: 300px; height: 300px; background: #6366f1; top: 40%; right: -50px; animation-duration: 20s; animation-delay: -10s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+            33% { transform: translate(30px, 50px) scale(1.1) rotate(10deg); }
+            66% { transform: translate(-20px, 80px) scale(0.9) rotate(-10deg); }
+            100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+        }
+
+        /* 3D Card Hover Tilt */
+        .glass-card {
+            perspective: 1000px;
+            transform-style: preserve-3d;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-8px) rotateX(2deg) rotateY(-1deg);
+            background: rgba(30, 41, 59, 0.75);
+            border-color: rgba(16, 185, 129, 0.5);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Interactive Cursor Glow */
+        #cursor-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -5;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s;
+        }
+
+        /* Staggered Reveal Animation */
+        .reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
         /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: rgba(0, 0, 0, 0.1);
         }
         ::-webkit-scrollbar-thumb {
-            background: #d1d5db;
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #9ca3af;
+            background: rgba(255, 255, 255, 0.2);
         }
     </style>
     
     {% block extra_head %}{% endblock %}
 </head>
-<body class="h-full text-gray-900">
+<body class="h-full overflow-x-hidden relative">
+    <!-- 3D Environment -->
+    <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <!-- Cursor Glow -->
+    <div id="cursor-glow"></div>
+
     <div class="min-h-full flex flex-col">
         <!-- Navigation -->
-        <nav class="glass-effect sticky top-0 z-50 border-b border-gray-200">
+        <nav class="glass sticky top-0 z-50 border-b border-white/5">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
-                    <div class="flex">
+                <div class="flex justify-between h-20">
+                    <div class="flex items-center">
                         <div class="flex-shrink-0 flex items-center">
-                            <a href="/" class="flex items-center space-x-2">
-                                <div class="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center text-white">
-                                    <i data-lucide="award" class="w-5 h-5"></i>
+                            <a href="/" class="flex items-center space-x-3 group [perspective:1000px]">
+                                <div class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-600/30 group-hover:[transform:rotateY(180deg)] transition-all duration-700 [transform-style:preserve-3d]">
+                                    <i data-lucide="award" class="w-6 h-6"></i>
                                 </div>
-                                <span class="text-xl font-bold font-heading tracking-tight">Certi<span class="text-indigo-600">Flow</span></span>
+                                <span class="text-2xl font-black font-heading tracking-tighter text-white">Certi<span class="text-emerald-500">Flow</span></span>
                             </a>
                         </div>
                         
-                        <div class="hidden sm:ml-8 sm:flex sm:space-x-8">
-                            <a href="{% url 'registrations:public_list' %}" class="{% if request.resolver_match.app_name == 'registrations' %}border-indigo-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                                Explore Events
+                        <div class="hidden sm:ml-12 sm:flex sm:space-x-8">
+                            <a href="{% url 'registrations:public_list' %}" class="{% if request.resolver_match.app_name == 'registrations' %}text-white border-indigo-500{% else %}text-slate-400 border-transparent hover:text-white hover:border-slate-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-[10px] font-black uppercase tracking-widest transition-all">
+                                Explore
                             </a>
-                        </div>
-                        
-                        {% if user.is_authenticated %}
-                        <div class="hidden sm:ml-8 sm:flex sm:space-x-8">
-                            <a href="{% url 'events:dashboard' %}" class="{% if request.resolver_match.app_name == 'events' %}border-indigo-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            
+                            {% if user.is_authenticated %}
+                            <a href="{% url 'events:dashboard' %}" class="{% if request.resolver_match.app_name == 'events' %}text-white border-indigo-500{% else %}text-slate-400 border-transparent hover:text-white hover:border-slate-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-[10px] font-black uppercase tracking-widest transition-all">
                                 Dashboard
                             </a>
-                            <a href="{% url 'organizations:org_list' %}" class="{% if request.resolver_match.app_name == 'organizations' %}border-indigo-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                                Organizations
-                            </a>
-                            <a href="{% url 'certificates:certificate_list' %}" class="{% if request.resolver_match.app_name == 'certificates' %}border-indigo-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <a href="{% url 'certificates:certificate_list' %}" class="{% if request.resolver_match.app_name == 'certificates' %}text-white border-indigo-500{% else %}text-slate-400 border-transparent hover:text-white hover:border-slate-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-[10px] font-black uppercase tracking-widest transition-all">
                                 Certificates
                             </a>
+                            {% endif %}
                         </div>
-                        {% endif %}
                     </div>
                     
-                    <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-6">
                         {% if user.is_authenticated %}
-                            <div class="hidden md:flex items-center space-x-4 mr-4">
-                                <button class="text-gray-400 hover:text-gray-500">
-                                    <i data-lucide="bell" class="w-6 h-6"></i>
-                                </button>
-                                <div class="h-6 w-px bg-gray-200"></div>
-                            </div>
-                            
-                            <div class="relative ml-3 flex items-center group">
-                                <div class="flex flex-col items-end mr-3">
-                                    <span class="text-sm font-semibold text-gray-700">{{ user.get_full_name }}</span>
-                                    <span class="text-xs text-gray-500">{{ user.get_role_display }}</span>
+                            <div class="hidden md:flex items-center space-x-4">
+                                <div class="text-right">
+                                    <p class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{{ user.get_role_display }}</p>
+                                    <p class="text-xs font-bold text-white">{{ user.get_full_name }}</p>
                                 </div>
-                                <button type="button" class="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" id="user-menu-button">
-                                    {% if user.avatar %}
-                                        <img class="h-10 w-10 rounded-full object-cover" src="{{ user.avatar.url }}" alt="">
-                                    {% else %}
-                                        <div class="h-10 w-10 rounded-full gradient-bg flex items-center justify-center text-white font-bold">
-                                            {{ user.get_short_name.0|upper }}
-                                        </div>
-                                    {% endif %}
-                                </button>
-                                
-                                <!-- Dropdown menu -->
-                                <div class="hidden group-hover:block absolute right-0 top-full w-48 pt-2 z-50">
-                                    <div class="rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-                                        <a href="{% url 'accounts:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Your Profile</a>
-                                        <a href="/accounts/settings/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
-                                        <div class="border-t border-gray-100 my-1"></div>
-                                        <form method="post" action="/accounts/logout/">
-                                            {% csrf_token %}
-                                            <button type="submit" class="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-red-50">Sign out</button>
-                                        </form>
+                                <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 p-0.5 shadow-lg">
+                                    <div class="h-full w-full bg-slate-900 rounded-[10px] flex items-center justify-center text-white font-black text-xs">
+                                        {{ user.get_short_name.0|upper }}
                                     </div>
                                 </div>
                             </div>
+                            <form action="{% url 'accounts:logout' %}" method="POST" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-glass p-2.5 rounded-xl">
+                                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                                </button>
+                            </form>
                         {% else %}
-                            <a href="/accounts/login/" class="text-gray-500 hover:text-gray-700 text-sm font-medium">Login</a>
-                            <a href="/accounts/signup/" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition duration-150">Get Started</a>
+                            <a href="{% url 'accounts:login' %}" class="text-sm font-bold text-slate-400 hover:text-white transition-colors">Login</a>
+                            <a href="{% url 'accounts:signup' %}" class="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-black shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all">Get Started</a>
                         {% endif %}
                     </div>
                 </div>
@@ -187,9 +318,48 @@
         </footer>
     </div>
 
-    <!-- Initialize Lucide Icons -->
+    <!-- Initialize Lucide Icons & Interactions -->
     <script>
         lucide.createIcons();
+
+        // Cursor Glow Tracking
+        const glow = document.getElementById('cursor-glow');
+        document.addEventListener('mousemove', (e) => {
+            glow.style.left = e.clientX + 'px';
+            glow.style.top = e.clientY + 'px';
+        });
+
+        // Count-up Animation
+        const countUp = (el) => {
+            const target = parseInt(el.innerText);
+            let count = 0;
+            const duration = 2000;
+            const increment = target / (duration / 16);
+            
+            const update = () => {
+                count += increment;
+                if (count < target) {
+                    el.innerText = Math.floor(count);
+                    requestAnimationFrame(update);
+                } else {
+                    el.innerText = target;
+                }
+            };
+            update();
+        };
+
+        // Reveal Animations on Scroll
+        const observerOptions = { threshold: 0.1 };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    // If it contains count-up elements
+                    entry.target.querySelectorAll('.count-up').forEach(countUp);
+                }
+            });
+        }, observerOptions);
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
     </script>
     
     {% block extra_js %}{% endblock %}

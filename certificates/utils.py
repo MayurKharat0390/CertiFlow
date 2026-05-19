@@ -67,38 +67,48 @@ def generate_certificate_pdf(certificate_id):
             color_hex = field.get('color', '#000000')
             p.setFillColor(HexColor(color_hex))
             
-            p.setFont(font, size)
+            # Auto-scaling logic: Ensure text fits within a safe horizontal margin
+            # Default safe width is 80% of page width
+            max_allowed_width = width * 0.8
+            current_text_width = p.stringWidth(text, font, size)
+            
+            scaled_size = size
+            while current_text_width > max_allowed_width and scaled_size > 8:
+                scaled_size -= 1
+                current_text_width = p.stringWidth(text, font, scaled_size)
+            
+            p.setFont(font, scaled_size)
+            
             # Center alignment logic if needed
             if field.get('align') == 'center':
                 p.drawCentredString(x, y, text)
             else:
                 p.drawString(x, y, text)
                 
-    # 3. Draw Verification QR Code
-    qr_url = f"{settings.SITE_URL}/verify/{cert.certificate_id}/"
-    qr = qrcode.QRCode(version=1, box_size=5, border=2)
-    qr.add_data(qr_url)
-    qr.make(fit=True)
-    qr_img = qr.make_image(fill_color="black", back_color="white")
-    
-    qr_buffer = BytesIO()
-    qr_img.save(qr_buffer, format="PNG")
-    qr_buffer.seek(0)
-    
-    # Search for QR position in layout
+    # 3. Draw Verification QR Code ONLY if it exists in the layout
     qr_field = next((f for f in layout if f.get('type') == 'qr_code'), None)
+    
     if qr_field:
+        qr_url = f"{settings.SITE_URL}/verify/{cert.certificate_id}/"
+        qr = qrcode.QRCode(version=1, box_size=5, border=2)
+        qr.add_data(qr_url)
+        qr.make(fit=True)
+        qr_img = qr.make_image(fill_color="black", back_color="white")
+        
+        qr_buffer = BytesIO()
+        qr_img.save(qr_buffer, format="PNG")
+        qr_buffer.seek(0)
+
         qr_x = qr_field.get('x', 0) * (width / 1000)
         qr_y = qr_field.get('y', 0) * (height / 1000)
         # Use direct scaling from designer without multipliers for perfect parity
         qr_size = qr_field.get('size', 80) * (width / 1000)
-    else:
-        # Default fallback (bottom left)
-        qr_x = 20 * mm
-        qr_y = 20 * mm
-        qr_size = 30 * mm
-    
-    p.drawImage(ImageReader(qr_buffer), qr_x, qr_y, width=qr_size, height=qr_size)
+        
+        p.drawImage(ImageReader(qr_buffer), qr_x, qr_y, width=qr_size, height=qr_size)
+        
+        # Save verification QR separately if needed for preview
+        qr_buffer.seek(0)
+        cert.verification_qr.save(f"qr_{cert.certificate_id}.png", ContentFile(qr_buffer.getvalue()), save=False)
     
     # 4. Finalize PDF
     p.showPage()
@@ -107,10 +117,6 @@ def generate_certificate_pdf(certificate_id):
     # 5. Save to model
     pdf_filename = f"cert_{cert.certificate_id}.pdf"
     cert.pdf_file.save(pdf_filename, ContentFile(buffer.getvalue()), save=False)
-    
-    # Save verification QR separately if needed for preview
-    qr_buffer.seek(0)
-    cert.verification_qr.save(f"qr_{cert.certificate_id}.png", ContentFile(qr_buffer.getvalue()), save=False)
     
     cert.status = 'completed'
     cert.save()

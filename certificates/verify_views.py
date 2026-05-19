@@ -21,6 +21,10 @@ def verify_certificate(request, certificate_id):
         is_success=not certificate.is_revoked
     )
     
+    # Increment view count
+    certificate.view_count += 1
+    certificate.save(update_fields=['view_count'])
+    
     return render(request, 'certificates/verify.html', {
         'certificate': certificate,
         'event': certificate.registration.event,
