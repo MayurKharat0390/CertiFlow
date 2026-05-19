@@ -13,15 +13,17 @@ def dashboard(request):
     """
     Main dashboard view showing stats and upcoming events.
     """
-    # Filter events based on organization context (simplified for now)
-    events = Event.objects.filter(status__in=['published', 'ongoing']).order_by('start_datetime')[:5]
+    from django.db.models import Count
+    events = Event.objects.filter(
+        status__in=['published', 'ongoing']
+    ).order_by('start_datetime').select_related('organization')[:5]
     
     # Stats
     upcoming_count = Event.objects.filter(start_datetime__gt=timezone.now(), status='published').count()
     total_registrations = Registration.objects.filter(status='confirmed').count()
     
-    # Activity logs
-    activity_logs = AuditLog.objects.all().order_by('-timestamp')[:5]
+    # Activity logs — prefetch user to avoid N+1
+    activity_logs = AuditLog.objects.select_related('user').order_by('-timestamp')[:5]
     
     context = {
         'events': events,
@@ -39,10 +41,10 @@ def event_list(request):
 @login_required
 def event_detail(request, pk):
     from certificates.models import Certificate
-    from django.db.models import Sum, Q
+    from django.db.models import Sum, Q, Count
     
-    event = get_object_or_404(Event, id=pk)
-    registrations = event.registrations.all().order_by('-registration_date')
+    event = get_object_or_404(Event.objects.select_related('organization'), id=pk)
+    registrations = event.registrations.select_related('user').order_by('-registration_date')
     
     search_query = request.GET.get('search', '').strip()
     if search_query:
@@ -55,12 +57,16 @@ def event_detail(request, pk):
     else:
         registrations = registrations[:50]
     
-    # Certificate Stats
-    certificates = Certificate.objects.filter(registration__event=event)
+    # Certificate Stats — single query with aggregate
+    cert_stats_agg = Certificate.objects.filter(registration__event=event).aggregate(
+        total_issued=Count('id'),
+        total_views=Sum('view_count'),
+        total_downloads=Sum('download_count'),
+    )
     cert_stats = {
-        'total_issued': certificates.count(),
-        'total_views': certificates.aggregate(Sum('view_count'))['view_count__sum'] or 0,
-        'total_downloads': certificates.aggregate(Sum('download_count'))['download_count__sum'] or 0,
+        'total_issued': cert_stats_agg['total_issued'] or 0,
+        'total_views': cert_stats_agg['total_views'] or 0,
+        'total_downloads': cert_stats_agg['total_downloads'] or 0,
     }
     
     return render(request, 'events/event_detail.html', {
@@ -168,28 +174,35 @@ def email_participants(request, pk):
     from certificates.models import Certificate
     
     event = get_object_or_404(Event, id=pk)
-    registrations = event.registrations.filter(status='confirmed')
+    registrations = event.registrations.filter(status='confirmed').select_related('user')
     
     if request.method == 'POST':
         subject_template = request.POST.get('subject')
         message_template = request.POST.get('message')
         attach_cert = request.POST.get('attach_certificate') == 'on'
         
-        count = 0
+        # Pre-fetch certificates for all registrations to avoid per-user queries
+        if attach_cert:
+            cert_map = {
+                c.registration_id: c
+                for c in Certificate.objects.filter(
+                    registration__in=registrations, status='completed'
+                ).exclude(pdf_file='').select_related('registration')
+            }
+        
+        email_logs = []
         for reg in registrations:
-            # Personalize
             name = reg.user.get_full_name()
             subject = subject_template.replace('{{ name }}', name)
             body_text = message_template.replace('{{ name }}', name)
             
-            # Handle certificate attachment
             attachment = None
             if attach_cert:
-                cert = Certificate.objects.filter(registration=reg, status='completed').first()
+                cert = cert_map.get(reg.id)
                 if cert and cert.pdf_file:
                     attachment = cert.pdf_file
             
-            EmailLog.objects.create(
+            email_logs.append(EmailLog(
                 organization=event.organization,
                 recipient_user=reg.user,
                 recipient_email=reg.user.email,
@@ -197,8 +210,10 @@ def email_participants(request, pk):
                 body_text=body_text,
                 attachment=attachment,
                 email_type='event_update'
-            )
-            count += 1
+            ))
+        
+        EmailLog.objects.bulk_create(email_logs)
+        count = len(email_logs)
             
         trigger_background_tasks()
         messages.success(request, f"Custom emails successfully queued for {count} participants.")
