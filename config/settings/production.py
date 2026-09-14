@@ -9,14 +9,30 @@ import dj_database_url
 
 DEBUG = False
 
-# Production Database - PostgreSQL
-DATABASES = {
-    'default': dj_database_url.config(
-        default=config('DATABASE_URL', default=''),
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
+# Allowed hosts for production
+allowed_hosts_env = config('ALLOWED_HOSTS', default='*')
+if allowed_hosts_env == '*':
+    ALLOWED_HOSTS = ['*']
+else:
+    ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(',') if h.strip()]
+
+# Production Database - PostgreSQL (fallback to SQLite if DATABASE_URL not yet configured)
+database_url = config('DATABASE_URL', default='')
+if database_url:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=database_url,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Security settings for production
 SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
