@@ -1,249 +1,791 @@
 {% extends "base.html" %}
 
-{% block title %}{{ event.title }}{% endblock %}
+{% block title %}{{ event.title }} | Event Command Center{% endblock %}
+
+{% block extra_head %}
+<style>
+    .workspace-tab.active {
+        background-color: #4f46e5 !important;
+        color: #ffffff !important;
+        border-color: #4f46e5 !important;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    }
+    html.theme-dark .workspace-tab:not(.active) {
+        background: rgba(15, 23, 42, 0.7);
+        border-color: rgba(255, 255, 255, 0.08);
+        color: #94a3b8;
+    }
+    html.theme-dark .workspace-tab:not(.active):hover {
+        background: rgba(30, 41, 59, 0.8);
+        color: #ffffff;
+    }
+    html.theme-light .workspace-tab:not(.active) {
+        background: #ffffff;
+        border-color: #e2e8f0;
+        color: #64748b;
+    }
+    html.theme-light .workspace-tab:not(.active):hover {
+        background: #f8fafc;
+        color: #0f172a;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Breadcrumbs -->
-    <nav class="flex mb-10" aria-label="Breadcrumb">
-        <ol class="flex items-center space-x-2 bg-white/5 backdrop-blur-md px-5 py-2 rounded-2xl border border-white/5">
+    <nav class="flex mb-6" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2 bg-white/5 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/5 text-xs">
             <li>
-                <a href="{% url 'events:event_list' %}" class="text-slate-400 hover:text-white transition-colors">
-                    <i data-lucide="home" class="w-4 h-4"></i>
+                <a href="{% url 'events:dashboard' %}" class="text-slate-400 hover:text-white transition-colors flex items-center gap-1">
+                    <i data-lucide="home" class="w-3.5 h-3.5"></i> Hub
                 </a>
             </li>
-            <li><i data-lucide="chevron-right" class="w-4 h-4 text-slate-600"></i></li>
+            <li><i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-600"></i></li>
             <li>
-                <a href="{% url 'events:event_list' %}" class="text-sm font-bold text-slate-400 hover:text-white transition-colors">Events</a>
+                <a href="{% url 'events:event_list' %}" class="text-slate-400 hover:text-white transition-colors font-semibold">Events</a>
             </li>
-            <li><i data-lucide="chevron-right" class="w-4 h-4 text-slate-600"></i></li>
+            <li><i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-600"></i></li>
             <li>
-                <span class="text-sm font-black text-indigo-400">{{ event.title }}</span>
+                <span class="text-indigo-400 font-bold truncate max-w-xs">{{ event.title }}</span>
             </li>
         </ol>
     </nav>
 
     <!-- Event Hero Header -->
-    <div class="glass-card rounded-[3rem] overflow-hidden mb-12 border-white/10 shadow-2xl">
-        <div class="h-64 relative">
+    <div class="glass-card rounded-3xl overflow-hidden mb-8 border border-white/10 shadow-xl relative">
+        <div class="h-56 sm:h-64 relative">
             {% if event.banner_image %}
-                <img src="{{ event.banner_image.url }}" class="w-full h-full object-cover opacity-40">
+                <img src="{{ event.banner_image.url }}" alt="{{ event.title }}" class="w-full h-full object-cover opacity-40">
             {% else %}
-                <div class="w-full h-full bg-gradient-to-br from-indigo-900 to-slate-900 opacity-60"></div>
+                <div class="w-full h-full bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 opacity-80 flex items-center justify-center">
+                    <i data-lucide="award" class="w-20 h-20 text-indigo-500/20"></i>
+                </div>
             {% endif %}
             
-            <!-- Animated Gradient Overlay -->
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent"></div>
             
-            <div class="absolute bottom-10 left-10 right-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-                <div class="space-y-4">
-                    <span class="px-4 py-1.5 bg-indigo-600 text-white rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-indigo-600/30">
-                        {{ event.get_event_type_display }}
-                    </span>
-                    <h1 class="text-4xl md:text-5xl font-black text-white font-heading text-glow leading-tight">
+            <div class="absolute bottom-6 left-6 right-6 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                        <span class="px-3 py-1 bg-indigo-600 text-white rounded-full text-[10px] font-black uppercase tracking-wider shadow-md">
+                            {{ event.get_event_type_display }}
+                        </span>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider {% if event.status == 'published' %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30{% else %}bg-slate-500/20 text-slate-300 border border-slate-500/30{% endif %}">
+                            {{ event.get_status_display }}
+                        </span>
+                        {% if event.is_online %}
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                            <i data-lucide="globe" class="w-3 h-3"></i> Online
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <h1 class="text-2xl sm:text-4xl font-black text-white font-heading leading-tight">
                         {{ event.title }}
                     </h1>
-                </div>
-                
-                <div class="flex items-center space-x-4">
-                    {% if user.is_superuser or user.role == 'event_manager' or user.role == 'org_admin' or user.role == 'volunteer' %}
-                    <a href="{% url 'attendance:volunteer_scanner' event.id %}" class="inline-flex items-center px-6 py-3 bg-white text-indigo-950 rounded-2xl text-sm font-black shadow-xl hover:scale-105 transition-all">
-                        <i data-lucide="scan" class="w-4 h-4 mr-2"></i> Scan Pass
-                    </a>
-                    {% endif %}
-
-                    {% if user.is_superuser or user.role == 'event_manager' or user.role == 'org_admin' %}
-                    <a href="{% url 'events:event_edit' event.id %}" class="btn-glass inline-flex items-center px-6 py-3 rounded-2xl text-sm font-bold">
-                        <i data-lucide="settings" class="w-4 h-4 mr-2"></i> Manage
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        
-        <div class="p-10 grid grid-cols-1 lg:grid-cols-3 gap-12">
-            <div class="lg:col-span-2 space-y-10">
-                <div class="space-y-4">
-                    <h3 class="text-xs font-black text-slate-500 uppercase tracking-[0.2em] flex items-center">
-                        <i data-lucide="info" class="w-4 h-4 mr-2 text-indigo-500"></i> Event Brief
-                    </h3>
-                    <p class="text-slate-300 text-lg leading-relaxed font-medium">{{ event.description|linebreaks }}</p>
-                </div>
-                
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div class="p-6 bg-white/5 rounded-3xl border border-white/5 flex items-start space-x-4">
-                        <div class="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
-                            <i data-lucide="calendar" class="w-6 h-6"></i>
-                        </div>
-                        <div>
-                            <span class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Timeline</span>
-                            <span class="text-sm font-bold text-white">{{ event.start_datetime|date:"l, d M Y" }}</span>
-                            <span class="block text-xs text-slate-400 mt-1">{{ event.start_datetime|date:"H:i" }} - {{ event.end_datetime|date:"H:i" }}</span>
-                        </div>
-                    </div>
-                    <div class="p-6 bg-white/5 rounded-3xl border border-white/5 flex items-start space-x-4">
-                        <div class="p-3 bg-purple-500/10 rounded-2xl text-purple-400">
-                            <i data-lucide="map-pin" class="w-6 h-6"></i>
-                        </div>
-                        <div>
-                            <span class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Venue</span>
-                            <span class="text-sm font-bold text-white">{{ event.venue_name|default:"Virtual Space" }}</span>
-                            <span class="block text-xs text-slate-400 mt-1 truncate max-w-[150px]">{{ event.venue_address|default:event.online_link }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="space-y-8">
-                <!-- Registration Stats -->
-                <div class="glass-card rounded-[2.5rem] p-8 border-white/5">
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Attendance Metrics</h3>
-                    <div class="space-y-6">
-                        <div class="space-y-3">
-                            <div class="flex justify-between items-end">
-                                <span class="text-xs font-bold text-slate-500 uppercase">Capacity</span>
-                                <span class="text-lg font-black text-white">{{ event.registered_count }}<span class="text-slate-500 font-medium text-xs ml-1">/ {{ event.max_capacity|default:"∞" }}</span></span>
-                            </div>
-                            <div class="w-full bg-white/5 rounded-full h-3 overflow-hidden p-0.5 border border-white/5">
-                                <div class="bg-gradient-to-r from-indigo-600 to-purple-600 h-full rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" style="width: 45%"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="flex justify-between items-center py-4 border-y border-white/5">
-                            <span class="text-xs font-bold text-slate-400 uppercase">Check-ins</span>
-                            <span class="text-sm font-black text-emerald-400">{{ event.attended_count }} Present</span>
-                        </div>
-
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs font-bold text-slate-400 uppercase">Gateway</span>
-                            <span class="px-3 py-1 bg-white/5 rounded-lg text-[10px] font-black text-indigo-300 uppercase tracking-tighter border border-white/5">{{ event.get_status_display }}</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Certificate Engagement -->
-                <div class="relative group rounded-[2.5rem] p-8 overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-br from-indigo-900 to-slate-900 border border-indigo-500/30"></div>
-                    <div class="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl"></div>
                     
-                    <div class="relative z-10 space-y-6">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-[10px] font-black text-indigo-300 uppercase tracking-[0.2em]">Credential Intel</h3>
-                            <i data-lucide="bar-chart-3" class="w-5 h-5 text-indigo-400"></i>
-                        </div>
-                        
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="p-4 bg-black/20 rounded-2xl border border-white/5">
-                                <span class="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Issued</span>
-                                <span class="text-2xl font-black text-white">{{ cert_stats.total_issued }}</span>
-                            </div>
-                            <div class="p-4 bg-black/20 rounded-2xl border border-white/5 text-glow">
-                                <span class="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Portal Views</span>
-                                <span class="text-2xl font-black text-indigo-400">{{ cert_stats.total_views }}</span>
-                            </div>
-                        </div>
-                        
-                        <div class="pt-4 border-t border-white/5 flex justify-between items-center">
-                            <span class="text-[10px] font-bold text-indigo-300/60 uppercase">Cloud Downloads</span>
-                            <span class="text-sm font-black text-white">{{ cert_stats.total_downloads }}</span>
-                        </div>
+                    <div class="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-slate-300 font-medium">
+                        <span class="flex items-center gap-1.5">
+                            <i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i>
+                            {{ event.start_datetime|date:"l, F d, Y • g:i A" }}
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <i data-lucide="map-pin" class="w-4 h-4 text-indigo-400"></i>
+                            {{ event.venue_name|default:"Online / Virtual" }}
+                        </span>
                     </div>
                 </div>
-
-                {% if user.is_superuser or user.role == 'event_manager' or user.role == 'org_admin' %}
-                <!-- Admin Actions -->
-                <div class="glass-card rounded-[2.5rem] p-8 border-white/5">
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Management Protocol</h3>
-                    <div class="grid grid-cols-1 gap-3">
-                        <a href="{% url 'events:event_email' event.id %}" class="w-full py-3 px-5 bg-white/5 rounded-2xl text-sm font-bold text-slate-300 hover:bg-white/10 hover:text-white transition-all flex items-center">
-                            <i data-lucide="mail" class="w-4 h-4 mr-3 text-indigo-400"></i> Outreach
+                
+                <!-- Hero Quick Actions -->
+                <div class="flex items-center gap-2.5 flex-wrap">
+                    {% if is_manager %}
+                        <button 
+                            type="button" 
+                            onclick="window.copyToClipboard('{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:register' event.id %}', this, 'Link Copied!')"
+                            class="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold border border-white/15 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                            title="Copy Public Registration Link"
+                        >
+                            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Registration Link
+                        </button>
+                        <a 
+                            href="{% url 'events:event_edit' event.id %}" 
+                            class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5"
+                        >
+                            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit Event
                         </a>
-                        <a href="{% url 'certificates:issue_bulk' event.id %}" class="w-full py-3 px-5 bg-indigo-600/10 rounded-2xl text-sm font-bold text-indigo-400 hover:bg-indigo-600/20 transition-all flex items-center border border-indigo-500/20">
-                            <i data-lucide="award" class="w-4 h-4 mr-3"></i> Deploy Certificates
+                    {% elif is_approved_volunteer %}
+                        {% if event.attendance_mode == 'volunteer_scans' %}
+                        <a href="{% url 'attendance:volunteer_scanner' event.id %}" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow-lg flex items-center gap-2">
+                            <i data-lucide="scan" class="w-4 h-4"></i> Open Scanner
                         </a>
-                        <a href="{% url 'events:import_participants' event.id %}" class="w-full py-3 px-5 bg-white/5 rounded-2xl text-sm font-bold text-slate-300 hover:bg-white/10 transition-all flex items-center">
-                            <i data-lucide="upload-cloud" class="w-4 h-4 mr-3 text-indigo-400"></i> Import Neural Data (CSV)
+                        {% endif %}
+                        {% if user_registration %}
+                        <a href="{% url 'attendance:participant_pass' event.id %}" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-lg flex items-center gap-2">
+                            <i data-lucide="ticket" class="w-4 h-4"></i> View Entry Pass
                         </a>
-                        <div class="pt-4 mt-2 border-t border-white/5">
-                            <a href="{% url 'events:reset_certificates' event.id %}" onclick="return confirm('Critical: This will wipe all issued credentials. Proceed?')" class="w-full py-3 px-5 bg-red-500/5 rounded-2xl text-sm font-bold text-red-400 hover:bg-red-500/10 transition-all flex items-center border border-red-500/10">
-                                <i data-lucide="refresh-cw" class="w-4 h-4 mr-3"></i> Purge Credentials
+                        {% endif %}
+                    {% else %}
+                        {% if user_registration %}
+                            <a href="{% url 'attendance:participant_pass' event.id %}" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-lg flex items-center gap-2">
+                                <i data-lucide="ticket" class="w-4 h-4"></i> View Entry Pass
                             </a>
-                        </div>
-                    </div>
+                            {% if volunteer_status == 'pending' %}
+                                <span class="px-4 py-2.5 bg-amber-500/10 text-amber-300 border border-amber-500/25 rounded-xl text-xs font-bold">
+                                    <i data-lucide="clock" class="w-3.5 h-3.5 inline mr-1"></i> Volunteer Application Pending
+                                </span>
+                            {% else %}
+                                <form action="{% url 'events:volunteer_apply' event.id %}" method="POST" class="inline-block">
+                                    {% csrf_token %}
+                                    <button type="submit" class="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/15 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
+                                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Volunteer for Event
+                                    </button>
+                                </form>
+                            {% endif %}
+                        {% else %}
+                            <a href="{% url 'registrations:register' event.id %}" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-600/30 flex items-center gap-2">
+                                <i data-lucide="user-plus" class="w-4 h-4"></i> Register Now
+                            </a>
+                        {% endif %}
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
         </div>
     </div>
 
-    {% if user.is_superuser or user.role == 'event_manager' or user.role == 'org_admin' %}
-    <!-- Registrations Table -->
-    <div class="glass-card rounded-[3rem] overflow-hidden">
-        <div class="px-10 py-7 border-b border-white/5 flex justify-between items-center bg-white/5">
-            <h3 class="text-xl font-bold text-white font-heading">Participant Roster</h3>
-            <div class="flex items-center space-x-4">
-                <form method="GET" class="relative hidden md:block">
-                    <input type="text" name="search" value="{{ search_query|default:'' }}" placeholder="Search by ID or Email..." class="bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:ring-indigo-500 focus:border-indigo-500 w-64">
-                    <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3.5 top-3"></i>
-                    {% if search_query %}
-                    <a href="{% url 'events:event_detail' event.id %}" class="absolute right-3.5 top-3 text-slate-500 hover:text-white">
-                        <i data-lucide="x" class="w-4 h-4"></i>
-                    </a>
+    {% if is_manager %}
+    <!-- ── Manager Workspace: 5-Tab Navigation ────────────────────────── -->
+    <div class="mb-8">
+        <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-slate-700/30">
+            <button type="button" data-tab="overview" class="workspace-tab active px-4 py-2.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 whitespace-nowrap">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview & Metrics
+            </button>
+            <button type="button" data-tab="attendees" class="workspace-tab px-4 py-2.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 whitespace-nowrap">
+                <i data-lucide="users" class="w-4 h-4"></i> Attendees Roster
+                <span class="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 rounded-md text-[10px]">{{ registrations|length }}</span>
+            </button>
+            <button type="button" data-tab="checkin" class="workspace-tab px-4 py-2.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 whitespace-nowrap">
+                <i data-lucide="qr-code" class="w-4 h-4"></i> Check-in & QR
+            </button>
+            <button type="button" data-tab="certificates" class="workspace-tab px-4 py-2.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 whitespace-nowrap">
+                <i data-lucide="award" class="w-4 h-4"></i> Certificates & Badges
+            </button>
+            <button type="button" data-tab="settings" class="workspace-tab px-4 py-2.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 whitespace-nowrap">
+                <i data-lucide="settings" class="w-4 h-4"></i> Settings & Forms
+            </button>
+        </div>
+    </div>
+
+    <!-- ── TAB 1: OVERVIEW & METRICS ──────────────────────────────────── -->
+    <div id="tab-overview" class="tab-pane space-y-8">
+        <!-- Key Metrics Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+            <div class="glass-card rounded-2xl p-5">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Registered</p>
+                <p class="text-3xl font-black text-white mt-1.5">{{ event.registered_count }}</p>
+                <p class="text-[11px] text-slate-400 mt-1">Capacity: {{ event.max_capacity|default:"Unlimited" }}</p>
+            </div>
+
+            <div class="glass-card rounded-2xl p-5">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Check-ins</p>
+                <p class="text-3xl font-black text-emerald-400 mt-1.5">{{ event.attended_count }}</p>
+                <p class="text-[11px] text-slate-400 mt-1">Present on-site</p>
+            </div>
+
+            <div class="glass-card rounded-2xl p-5">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Attendance Rate</p>
+                <p class="text-3xl font-black text-indigo-400 mt-1.5">
+                    {% if event.registered_count > 0 %}
+                        {% widthratio event.attended_count event.registered_count 100 %}%
+                    {% else %}
+                        0%
                     {% endif %}
-                </form>
-                <a href="{% url 'events:event_detail' event.id %}" class="btn-glass px-4 py-2.5 rounded-xl text-xs font-bold">View full list</a>
+                </p>
+                <p class="text-[11px] text-slate-400 mt-1">Check-in conversion</p>
+            </div>
+
+            <div class="glass-card rounded-2xl p-5">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Certificates Issued</p>
+                <p class="text-3xl font-black text-amber-400 mt-1.5">{{ cert_stats.total_issued|default:0 }}</p>
+                <p class="text-[11px] text-slate-400 mt-1">{{ cert_stats.total_views|default:0 }} portal views</p>
             </div>
         </div>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-white/5">
-                <thead class="bg-white/5">
-                    <tr>
-                        <th class="px-10 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Participant</th>
-                        <th class="px-10 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Neural ID</th>
-                        <th class="px-10 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Date Joined</th>
-                        <th class="px-10 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Access Status</th>
-                        <th class="px-10 py-5 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-white/5">
-                    {% for reg in registrations %}
-                    <tr class="hover:bg-white/5 transition-colors">
-                        <td class="px-10 py-6 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white text-xs font-black shadow-lg mr-4">
-                                    {{ reg.user.get_short_name.0|upper }}
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left: Description & Schedule -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Shareable Registration Link Box -->
+                <div class="glass-card rounded-2xl p-6 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                            <i data-lucide="share-2" class="w-4 h-4 text-indigo-400"></i> Public Registration Link
+                        </h3>
+                        <a href="{% url 'registrations:register' event.id %}" target="_blank" class="text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1">
+                            Preview Page <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                        </a>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input 
+                            type="text" 
+                            readonly 
+                            value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:register' event.id %}" 
+                            class="w-full text-xs font-mono bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-slate-300 select-all"
+                        >
+                        <button 
+                            type="button" 
+                            onclick="window.copyToClipboard('{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:register' event.id %}', this)"
+                            class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer"
+                        >
+                            Copy Link
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Event Details Brief -->
+                <div class="glass-card rounded-2xl p-8 space-y-6">
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">About This Event</h3>
+                        <div class="text-sm text-slate-300 leading-relaxed font-normal whitespace-pre-line">
+                            {{ event.description }}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                        <div class="p-4 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Schedule & Hours</p>
+                            <p class="text-xs font-bold text-white">{{ event.start_datetime|date:"l, M d, Y" }}</p>
+                            <p class="text-xs text-slate-400">{{ event.start_datetime|time:"g:i A" }} - {{ event.end_datetime|time:"g:i A" }}</p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Location</p>
+                            <p class="text-xs font-bold text-white">{{ event.venue_name|default:"Online" }}</p>
+                            <p class="text-xs text-slate-400 truncate">{{ event.venue_address|default:event.online_link }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Quick Status & Launchers -->
+            <div class="space-y-6">
+                <!-- Check-in Readiness Card -->
+                <div class="glass-card rounded-2xl p-6 space-y-4">
+                    <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <i data-lucide="activity" class="w-4 h-4 text-emerald-400"></i> Event Check-in Station
+                    </h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        {% if event.attendance_mode == 'participant_scans' %}
+                            Mode B is configured: Project the live rotating QR code on auditorium displays.
+                        {% else %}
+                            Mode A is configured: Event volunteers scan arriving participant passes.
+                        {% endif %}
+                    </p>
+                    <div class="pt-2 flex flex-col gap-2">
+                        {% if event.attendance_mode == 'participant_scans' %}
+                        <a href="{% url 'attendance:room_qr' event.id %}" target="_blank" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold text-center transition-all flex items-center justify-center gap-1.5 shadow-md">
+                            <i data-lucide="qr-code" class="w-4 h-4"></i> Launch Room Display (Mode B)
+                        </a>
+                        {% else %}
+                        <a href="{% url 'attendance:volunteer_scanner' event.id %}" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold text-center transition-all flex items-center justify-center gap-1.5 shadow-md">
+                            <i data-lucide="scan" class="w-4 h-4"></i> Launch Scanner (Mode A)
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Organization Info -->
+                <div class="glass-card rounded-2xl p-6 space-y-3">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hosting Organization</p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-black text-sm">
+                            {{ event.organization.name|slice:":1" }}
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-white">{{ event.organization.name }}</p>
+                            <p class="text-xs text-slate-400">{{ event.organization.slug }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── TAB 2: ATTENDEES ROSTER ───────────────────────────────────── -->
+    <div id="tab-attendees" class="tab-pane hidden space-y-6">
+        <div class="glass-card rounded-3xl overflow-hidden shadow-sm">
+            <div class="p-6 border-b border-white/5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/5">
+                <div>
+                    <h3 class="text-lg font-bold text-white font-heading">Attendee Directory</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Manage registrations, check-in status, and individual credentials</p>
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Status Filter Pills -->
+                    <div class="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/5 text-xs">
+                        <button type="button" data-attendee-filter="all" class="attendee-filter-pill active px-3 py-1.5 rounded-lg font-bold transition-all bg-indigo-600 text-white shadow-sm">
+                            All
+                        </button>
+                        <button type="button" data-attendee-filter="attended" class="attendee-filter-pill px-3 py-1.5 rounded-lg font-bold transition-all text-slate-400 hover:text-white">
+                            Checked In
+                        </button>
+                        <button type="button" data-attendee-filter="awaiting" class="attendee-filter-pill px-3 py-1.5 rounded-lg font-bold transition-all text-slate-400 hover:text-white">
+                            Awaiting
+                        </button>
+                        <button type="button" data-attendee-filter="cert" class="attendee-filter-pill px-3 py-1.5 rounded-lg font-bold transition-all text-slate-400 hover:text-white">
+                            With Cert
+                        </button>
+                    </div>
+
+                    <div class="relative">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                        <input 
+                            type="text" 
+                            id="attendee-search-filter"
+                            placeholder="Search name, email, ID..." 
+                            class="w-52 pl-9 pr-3 py-1.5 text-xs bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500"
+                        >
+                    </div>
+
+                    <a href="{% url 'events:event_export' event.id %}" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold border border-white/10 transition-all flex items-center gap-1.5" title="Export attendee data">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV
+                    </a>
+                    <a href="{% url 'events:import_participants' event.id %}" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5" title="Upload attendees CSV">
+                        <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i> Import CSV
+                    </a>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-white/5 text-xs" id="attendees-table">
+                    <thead class="bg-white/5">
+                        <tr>
+                            <th class="px-6 py-4 text-left font-bold text-slate-400 uppercase tracking-wider">Attendee</th>
+                            <th class="px-6 py-4 text-left font-bold text-slate-400 uppercase tracking-wider">Pass ID</th>
+                            <th class="px-6 py-4 text-left font-bold text-slate-400 uppercase tracking-wider">Registered On</th>
+                            <th class="px-6 py-4 text-left font-bold text-slate-400 uppercase tracking-wider">Attendance</th>
+                            <th class="px-6 py-4 text-left font-bold text-slate-400 uppercase tracking-wider">Certificate</th>
+                            <th class="px-6 py-4 text-right font-bold text-slate-400 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        <tr id="no-filter-match-row" class="hidden">
+                            <td colspan="6" class="px-6 py-10 text-center text-slate-400">
+                                <i data-lucide="search-x" class="w-6 h-6 mx-auto mb-2 opacity-50"></i>
+                                <p class="font-bold text-sm text-white">No attendees match your search or filter</p>
+                                <p class="text-xs text-slate-400 mt-1">Try clearing the search query or selecting "All".</p>
+                            </td>
+                        </tr>
+                        {% for reg in registrations %}
+                        <tr class="attendee-row hover:bg-white/5 transition-colors" 
+                            data-search="{{ reg.user.get_full_name|lower }} {{ reg.user.email|lower }} {{ reg.participant_id|lower }}"
+                            data-status="{% if reg.status == 'attended' %}attended{% else %}awaiting{% endif %}"
+                            data-cert="{% with cert=reg.certificates.first %}{% if cert and cert.status == 'completed' %}cert{% else %}none{% endif %}{% endwith %}">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center gap-3">
+                                    <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                                        {{ reg.user.get_short_name.0|upper }}
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-white">{{ reg.user.get_full_name|default:reg.user.email }}</p>
+                                        <p class="text-[11px] text-slate-400">{{ reg.user.email }}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div class="text-sm font-bold text-white">{{ reg.user.get_full_name }}</div>
-                                    <div class="text-[10px] text-slate-500 font-mono tracking-tight mt-1">{{ reg.user.email }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-10 py-6 whitespace-nowrap text-xs font-mono text-indigo-300/80">{{ reg.participant_id }}</td>
-                        <td class="px-10 py-6 whitespace-nowrap text-xs text-slate-400">{{ reg.registration_date|date:"M d, Y" }}</td>
-                        <td class="px-10 py-6 whitespace-nowrap">
-                            <span class="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter {% if reg.status == 'confirmed' %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{% else %}bg-amber-500/10 text-amber-400 border border-amber-500/20{% endif %}">
-                                {{ reg.get_status_display }}
-                            </span>
-                        </td>
-                        <td class="px-10 py-6 whitespace-nowrap text-right">
-                            <a href="{% url 'events:email_single_participant' event.id reg.id %}" title="Send Email" class="inline-block p-2 text-slate-500 hover:text-indigo-400 transition-colors"><i data-lucide="mail" class="w-5 h-5"></i></a>
-                            <a href="{% url 'events:issue_single_certificate' event.id reg.id %}" title="Issue Certificate" class="inline-block p-2 text-slate-500 hover:text-emerald-400 transition-colors"><i data-lucide="award" class="w-5 h-5"></i></a>
-                            <form action="{% url 'events:remove_participant' event.id reg.id %}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to remove this participant?');">
-                                {% csrf_token %}
-                                <button type="submit" title="Remove Participant" class="p-2 text-slate-500 hover:text-red-400 transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
-                            </form>
-                        </td>
-                    </tr>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono text-indigo-300 font-semibold">
+                                {{ reg.participant_id }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-slate-400">
+                                {{ reg.registration_date|date:"M d, Y" }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if reg.status == 'confirmed' %}
+                                    <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                                        Confirmed
+                                    </span>
+                                {% elif reg.status == 'attended' %}
+                                    <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                        ✓ Checked In
+                                    </span>
+                                {% else %}
+                                    <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/20">
+                                        {{ reg.get_status_display }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% with cert=reg.certificates.first %}
+                                    {% if cert %}
+                                        {% if cert.status == 'completed' %}
+                                            <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 flex items-center gap-1 w-fit">
+                                                <i data-lucide="check-circle" class="w-3 h-3"></i> Issued
+                                            </span>
+                                        {% elif cert.status == 'pending' or cert.status == 'generating' %}
+                                            <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/20 animate-pulse flex items-center gap-1 w-fit">
+                                                <i data-lucide="clock" class="w-3 h-3"></i> Generating...
+                                            </span>
+                                        {% else %}
+                                            <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/20">
+                                                Failed
+                                            </span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-slate-500 text-xs italic">Not Issued</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right space-x-1">
+                                <a href="{% url 'events:email_single_participant' event.id reg.id %}" title="Send Email" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-white/5 transition-colors inline-block">
+                                    <i data-lucide="mail" class="w-4 h-4"></i>
+                                </a>
+                                <a href="{% url 'events:issue_single_certificate' event.id reg.id %}" title="Issue Certificate" class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-white/5 transition-colors inline-block">
+                                    <i data-lucide="award" class="w-4 h-4"></i>
+                                </a>
+                                <form action="{% url 'events:remove_participant' event.id reg.id %}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to remove this participant?');">
+                                    {% csrf_token %}
+                                    <button type="submit" title="Remove Attendee" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-white/5 transition-colors">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+                                <i data-lucide="users" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+                                <p class="font-bold">No attendees registered yet</p>
+                                <p class="text-xs text-slate-400 mt-1">Share your public registration link to start enrolling attendees.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── TAB 3: CHECK-IN & QR STATIONS ─────────────────────────────── -->
+    <div id="tab-checkin" class="tab-pane hidden space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Mode A Station -->
+            <div class="glass-card rounded-3xl p-8 space-y-6 flex flex-col justify-between border-indigo-500/20">
+                <div class="space-y-4">
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+                        <i data-lucide="scan" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Station Mode A</span>
+                        <h3 class="text-xl font-bold text-white mt-1">Volunteer Entry Scanner</h3>
+                    </div>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        Authorized volunteers use mobile camera or dedicated barcode scanners to scan arriving attendee QR passes. Instant validation against duplicate check-in.
+                    </p>
+                </div>
+                <div class="pt-4 border-t border-white/5">
+                    <a href="{% url 'attendance:volunteer_scanner' event.id %}" target="_blank" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold text-center transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20">
+                        <i data-lucide="camera" class="w-4 h-4"></i> Open Scanner Station
+                    </a>
+                </div>
+            </div>
+
+            <!-- Mode B Station -->
+            <div class="glass-card rounded-3xl p-8 space-y-6 flex flex-col justify-between border-emerald-500/20">
+                <div class="space-y-4">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                        <i data-lucide="projector" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Station Mode B</span>
+                        <h3 class="text-xl font-bold text-white mt-1">Live Room QR Display</h3>
+                    </div>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        Project this dynamic, rotating QR code on auditorium screens. Attendees scan with their phone cameras to register attendance in seconds.
+                    </p>
+                </div>
+                <div class="pt-4 border-t border-white/5">
+                    <a href="{% url 'attendance:room_qr' event.id %}" target="_blank" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold text-center transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
+                        <i data-lucide="maximize" class="w-4 h-4"></i> Launch Projector Display
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flagged Scans Audit Box -->
+        <div class="glass-card rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-rose-500/20">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 rounded-xl bg-rose-500/10 text-rose-400">
+                    <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold text-white">Attendance Security & Flagged Scans</h4>
+                    <p class="text-[11px] text-slate-400">Review suspicious check-ins, duplicate attempts, or out-of-boundary scans.</p>
+                </div>
+            </div>
+            <a href="{% url 'attendance:flagged_scans' event.id %}" class="px-4 py-2 bg-rose-600/15 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap">
+                Review Flagged Scans <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- ── TAB 4: CERTIFICATES & BADGES ──────────────────────────────── -->
+    <div id="tab-certificates" class="tab-pane hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Issuance Overview -->
+            <div class="lg:col-span-2 glass-card rounded-3xl p-8 space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-bold text-white font-heading">Automated Certificate Delivery</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Issue cryptographically verifiable digital certificates to confirmed attendees</p>
+                    </div>
+                    <a href="{% url 'certificates:template_create' %}" class="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold border border-white/10 transition-all flex items-center gap-1.5">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> New Template
+                    </a>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 text-center">
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Issued</p>
+                        <p class="text-2xl font-black text-white mt-1">{{ cert_stats.total_issued }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Portal Views</p>
+                        <p class="text-2xl font-black text-indigo-400 mt-1">{{ cert_stats.total_views }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">PDF Downloads</p>
+                        <p class="text-2xl font-black text-emerald-400 mt-1">{{ cert_stats.total_downloads }}</p>
+                    </div>
+                </div>
+
+                <!-- Template Preview & Bulk Action -->
+                <div class="pt-4 border-t border-white/5 space-y-4">
+                    <h4 class="text-xs font-bold text-white uppercase tracking-wider">Issuance Actions</h4>
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <a 
+                            href="{% url 'certificates:issue_bulk' event.id %}" 
+                            onclick="return confirm('Issue verified certificates to all eligible attendees who completed this event?')"
+                            class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-2"
+                        >
+                            <i data-lucide="award" class="w-4 h-4"></i> Issue Certificates in Bulk
+                        </a>
+                        
+                        <a 
+                            href="{% url 'events:reset_certificates' event.id %}" 
+                            onclick="return confirm('Warning: This will clear all previously generated certificates for this event so they can be re-issued. Continue?')"
+                            class="px-4 py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+                        >
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Reset Issuances
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Linked Template Info -->
+            <div class="glass-card rounded-3xl p-6 space-y-4">
+                <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="palette" class="w-4 h-4 text-indigo-400"></i> Active Templates
+                </h4>
+                <div class="space-y-3">
+                    {% for tmpl in event.certificate_templates.all %}
+                    <div class="p-3.5 rounded-xl bg-white/5 border border-white/5 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <p class="text-xs font-bold text-white">{{ tmpl.name }}</p>
+                            <span class="text-[10px] font-bold text-indigo-400 uppercase">{{ tmpl.get_category_display }}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px] text-slate-400">
+                            <span>Updated {{ tmpl.updated_at|date:"M d" }}</span>
+                            <a href="{% url 'certificates:template_update' tmpl.id %}" class="text-indigo-400 hover:underline">Edit Canvas</a>
+                        </div>
+                    </div>
                     {% empty %}
-                    <tr>
-                        <td colspan="5" class="px-10 py-20 text-center text-slate-600 font-medium italic">Scanning for participants... No results found.</td>
-                    </tr>
+                    <div class="p-6 text-center text-slate-500 rounded-xl bg-white/5">
+                        <i data-lucide="layout" class="w-6 h-6 mx-auto mb-2 opacity-40"></i>
+                        <p class="text-xs font-bold">No template linked</p>
+                        <p class="text-[11px] text-slate-400 mt-1 mb-3">Create a certificate design template to start automated issuance.</p>
+                        <a href="{% url 'certificates:template_create' %}" class="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-[11px] font-bold">
+                            Create Design
+                        </a>
+                    </div>
                     {% endfor %}
-                </tbody>
-            </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── TAB 5: SETTINGS & FORMS ────────────────────────────────────── -->
+    <div id="tab-settings" class="tab-pane hidden space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Form Builder -->
+            <a href="{% url 'events:form_builder' event.id %}" class="glass-card p-6 rounded-3xl flex flex-col justify-between hover:border-indigo-500/40 group transition-all">
+                <div class="space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i data-lucide="form-input" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white group-hover:text-indigo-400 transition-colors">Registration Form Builder</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">Customize questions, add required fields, collect participant dietary, t-shirt sizes, or resume uploads.</p>
+                </div>
+                <div class="pt-4 mt-4 border-t border-white/5 flex items-center text-xs font-bold text-indigo-400">
+                    Customize Form <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1"></i>
+                </div>
+            </a>
+
+            <!-- Volunteers -->
+            <a href="{% url 'events:manage_volunteers' event.id %}" class="glass-card p-6 rounded-3xl flex flex-col justify-between hover:border-emerald-500/40 group transition-all">
+                <div class="space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i data-lucide="user-check" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white group-hover:text-emerald-400 transition-colors">Volunteers & Staff</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">Review volunteer applications, approve event staff, and grant mobile scanner privileges.</p>
+                </div>
+                <div class="pt-4 mt-4 border-t border-white/5 flex items-center text-xs font-bold text-emerald-400">
+                    Manage Staff <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1"></i>
+                </div>
+            </a>
+
+            <!-- Email Outreach -->
+            <a href="{% url 'events:event_email' event.id %}" class="glass-card p-6 rounded-3xl flex flex-col justify-between hover:border-purple-500/40 group transition-all">
+                <div class="space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i data-lucide="mail" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white group-hover:text-purple-400 transition-colors">Email Outreach Broadcast</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">Send announcements, schedule updates, or entry passes directly to registered attendees' inboxes.</p>
+                </div>
+                <div class="pt-4 mt-4 border-t border-white/5 flex items-center text-xs font-bold text-purple-400">
+                    Compose Broadcast <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1"></i>
+                </div>
+            </a>
+
+            {% if is_org_admin %}
+            <!-- Coordinators -->
+            <a href="{% url 'events:manage_coordinators' event.id %}" class="glass-card p-6 rounded-3xl flex flex-col justify-between hover:border-amber-500/40 group transition-all">
+                <div class="space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i data-lucide="shield" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white group-hover:text-amber-400 transition-colors">Event Coordinators</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">Assign co-organizers and manage administrative permissions for this specific event.</p>
+                </div>
+                <div class="pt-4 mt-4 border-t border-white/5 flex items-center text-xs font-bold text-amber-400">
+                    Manage Roles <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1"></i>
+                </div>
+            </a>
+            {% endif %}
+
+            <!-- Edit Details -->
+            <a href="{% url 'events:event_edit' event.id %}" class="glass-card p-6 rounded-3xl flex flex-col justify-between hover:border-slate-400 group transition-all">
+                <div class="space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-white/5 text-slate-300 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i data-lucide="sliders" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white group-hover:text-slate-200 transition-colors">Event Configuration</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">Modify title, schedule dates, registration deadlines, venue address, and banners.</p>
+                </div>
+                <div class="pt-4 mt-4 border-t border-white/5 flex items-center text-xs font-bold text-slate-400">
+                    Edit Settings <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1"></i>
+                </div>
+            </a>
         </div>
     </div>
     {% endif %}
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // ── Tab Switching Logic ────────────────────────────────────────────────
+    const tabButtons = document.querySelectorAll('.workspace-tab');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+
+    function activateTab(tabId) {
+        if (!tabId) return;
+        const targetBtn = document.querySelector(`.workspace-tab[data-tab="${tabId}"]`);
+        const targetPane = document.getElementById(`tab-${tabId}`);
+
+        if (targetBtn && targetPane) {
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabPanes.forEach(pane => pane.classList.add('hidden'));
+
+            targetBtn.classList.add('active');
+            targetPane.classList.remove('hidden');
+
+            if (history.replaceState) {
+                history.replaceState(null, null, `#${tabId}`);
+            }
+        }
+    }
+
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.getAttribute('data-tab');
+            activateTab(tabId);
+        });
+    });
+
+    // Check URL Hash on initial page load
+    const hash = window.location.hash.replace('#', '');
+    if (hash && document.getElementById(`tab-${hash}`)) {
+        activateTab(hash);
+    }
+
+    // ── Attendee Table Live Filter (Search + Status Pills) ─────────────────
+    const attendeeSearch = document.getElementById('attendee-search-filter');
+    const attendeeRows = document.querySelectorAll('.attendee-row');
+    const filterPills = document.querySelectorAll('.attendee-filter-pill');
+    const noMatchRow = document.getElementById('no-filter-match-row');
+    let activeFilter = 'all';
+
+    function applyAttendeeFilters() {
+        const query = (attendeeSearch ? attendeeSearch.value : '').toLowerCase().trim();
+        let visibleCount = 0;
+
+        attendeeRows.forEach(row => {
+            const searchData = (row.getAttribute('data-search') || '').toLowerCase();
+            const status = row.getAttribute('data-status') || '';
+            const cert = row.getAttribute('data-cert') || '';
+
+            const matchesQuery = !query || searchData.includes(query);
+            let matchesFilter = true;
+
+            if (activeFilter === 'attended') {
+                matchesFilter = (status === 'attended');
+            } else if (activeFilter === 'awaiting') {
+                matchesFilter = (status === 'awaiting');
+            } else if (activeFilter === 'cert') {
+                matchesFilter = (cert === 'cert');
+            }
+
+            if (matchesQuery && matchesFilter) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        if (noMatchRow) {
+            noMatchRow.classList.toggle('hidden', visibleCount > 0 || attendeeRows.length === 0);
+        }
+    }
+
+    if (attendeeSearch) {
+        attendeeSearch.addEventListener('input', applyAttendeeFilters);
+    }
+
+    filterPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            filterPills.forEach(p => {
+                p.classList.remove('bg-indigo-600', 'text-white', 'shadow-sm');
+                p.classList.add('text-slate-400');
+            });
+            pill.classList.remove('text-slate-400');
+            pill.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
+
+            activeFilter = pill.getAttribute('data-attendee-filter');
+            applyAttendeeFilters();
+        });
+    });
+});
+</script>
+{% endblock %}
+

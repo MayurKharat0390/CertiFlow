@@ -23,3 +23,19 @@ class SignupForm(UserCreationForm):
             self.fields[field].widget.attrs.update({
                 'class': 'appearance-none block w-full px-3 py-2 border rounded-xl shadow-sm focus:outline-none focus:ring-indigo-500 sm:text-sm'
             })
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = (
+            'first_name', 'last_name', 'phone', 
+            'institution', 'department', 'year_of_study', 
+            'github_url', 'linkedin_url', 'portfolio_url'
+        )
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({
+                'class': 'appearance-none block w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'
+            })

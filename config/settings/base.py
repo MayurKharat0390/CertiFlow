@@ -184,6 +184,11 @@ QR_REFRESH_INTERVAL = config('QR_REFRESH_INTERVAL', default=20, cast=int)  # sec
 CERT_SECRET_KEY = config('CERT_SECRET_KEY', default='cert-signing-secret')
 SITE_URL = config('SITE_URL', default='http://localhost:8000')
 
+# Google OAuth2 for Gmail API
+GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID', default='')
+GOOGLE_CLIENT_SECRET = config('GOOGLE_CLIENT_SECRET', default='')
+
+
 # Celery Configuration
 CELERY_BROKER_URL = config('REDIS_URL', default='redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = config('REDIS_URL', default='redis://localhost:6379/0')

@@ -69,15 +69,37 @@ class RegistrationForm(models.Model):
         SELECT = 'select', _('Dropdown')
         CHECKBOX = 'checkbox', _('Checkbox')
         NUMBER = 'number', _('Number')
+        RADIO = 'radio', _('Radio Buttons')
+        FILE = 'file', _('File Upload')
+        URL = 'url', _('URL / Link')
+        DATE = 'date', _('Date')
+        SECTION = 'section', _('Section Header')
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='custom_form_fields')
     label = models.CharField(max_length=200)
     field_name = models.SlugField(max_length=50) # Key in the JSON data
     field_type = models.CharField(max_length=20, choices=FieldType.choices, default=FieldType.TEXT)
-    options = models.TextField(blank=True, help_text='Comma-separated for dropdowns')
+    options = models.TextField(blank=True, help_text='Comma-separated for dropdowns/radio buttons')
     is_required = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
+
+    # Form builder extended fields
+    step_number = models.PositiveIntegerField(
+        default=1,
+        help_text='Which wizard step this field belongs to'
+    )
+    placeholder = models.CharField(max_length=200, blank=True)
+    help_text_extra = models.CharField(
+        max_length=500, blank=True,
+        help_text='Helper text shown below the field'
+    )
+    conditional_logic = models.JSONField(
+        default=dict, blank=True,
+        help_text='Show this field only if: {"field_name": "x", "operator": "equals", "value": "y"}'
+    )
+    # Which profile field to pre-fill from (e.g. "department", "year_of_study", "github_url")
+    prefill_from = models.CharField(max_length=50, blank=True)
 
     class Meta:
         unique_together = ('event', 'field_name')

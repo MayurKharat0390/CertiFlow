@@ -79,11 +79,16 @@
             </div>
             <div class="p-4 flex justify-between items-center">
                 <span class="text-xs text-gray-500">Updated {{ template.updated_at|timesince }} ago</span>
-                <div class="flex space-x-2">
-                    <a href="{% url 'certificates:template_update' template.id %}" class="p-2 text-gray-400 hover:text-indigo-600">
+                <div class="flex items-center space-x-2">
+                    <a href="{% url 'certificates:template_update' template.id %}" class="p-2 text-gray-400 hover:text-indigo-600" title="Edit Template">
                         <i data-lucide="edit" class="w-4 h-4"></i>
                     </a>
-                    <button class="p-2 text-gray-400 hover:text-indigo-600"><i data-lucide="copy" class="w-4 h-4"></i></button>
+                    <form action="{% url 'certificates:template_delete' template.id %}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this template? This will not delete already issued certificates.');">
+                        {% csrf_token %}
+                        <button type="submit" class="p-2 text-gray-400 hover:text-red-600 transition-colors" title="Delete Template">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -120,19 +125,24 @@
                         <p class="text-sm text-gray-700">{{ cert.issue_date|date:"M d, Y" }}</p>
                     </div>
                 </div>
-                <div class="flex space-x-3">
-                    {% if cert.pdf_file %}
-                    <a href="{{ cert.pdf_file.url }}" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-center text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">
-                        Download PDF
-                    </a>
-                    {% else %}
-                    <button disabled class="flex-1 py-3 bg-gray-200 text-gray-400 rounded-xl text-center text-sm font-bold cursor-not-allowed">
-                        Generating...
-                    </button>
-                    {% endif %}
-                    <a href="{% url 'verify:certificate' cert.certificate_id %}" class="px-4 py-3 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-100 transition-all">
-                        <i data-lucide="external-link" class="w-5 h-5"></i>
-                    </a>
+                <div class="space-y-2">
+                    <div class="flex space-x-2">
+                        {% if cert.pdf_file %}
+                        <a href="{% url 'verify:certificate_image' cert.certificate_id %}?download=1" class="flex-1 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white rounded-xl text-center text-xs font-bold shadow-md transition-all flex items-center justify-center gap-1.5">
+                            <i data-lucide="image" class="w-3.5 h-3.5"></i> PNG (300 DPI)
+                        </a>
+                        <a href="{{ cert.pdf_file.url }}" download class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-center text-xs font-bold transition-all flex items-center justify-center gap-1.5">
+                            <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF
+                        </a>
+                        {% else %}
+                        <button disabled class="flex-1 py-2.5 bg-gray-200 text-gray-400 rounded-xl text-center text-xs font-bold cursor-not-allowed">
+                            Generating...
+                        </button>
+                        {% endif %}
+                        <a href="{% url 'verify:certificate' cert.certificate_id %}" class="px-3.5 py-2.5 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-100 transition-all flex items-center justify-center" title="Public Verification Portal">
+                            <i data-lucide="external-link" class="w-4 h-4"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

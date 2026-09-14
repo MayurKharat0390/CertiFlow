@@ -37,10 +37,22 @@ def login_view(request):
 @login_required
 def profile_view(request):
     """
-    User profile view showing account details and roles.
+    User profile view allowing students and managers to manage details.
     """
+    from .forms import UserProfileForm
+    
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Your profile has been updated successfully!")
+            return redirect('accounts:profile')
+    else:
+        form = UserProfileForm(instance=request.user)
+        
     memberships = request.user.memberships.all()
     return render(request, 'accounts/profile.html', {
         'user': request.user,
+        'form': form,
         'memberships': memberships
     })

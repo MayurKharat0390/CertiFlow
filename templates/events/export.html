@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block title %}Custom Roster Export - {{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <!-- Breadcrumbs -->
+    <nav class="flex mb-10" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2 bg-white/5 backdrop-blur-md px-5 py-2 rounded-2xl border border-white/5">
+            <li>
+                <a href="{% url 'events:event_list' %}" class="text-slate-400 hover:text-white transition-colors">
+                    <i data-lucide="home" class="w-4 h-4"></i>
+                </a>
+            </li>
+            <li><i data-lucide="chevron-right" class="w-4 h-4 text-slate-600"></i></li>
+            <li>
+                <a href="{% url 'events:event_list' %}" class="text-sm font-bold text-slate-400 hover:text-white transition-colors">Events</a>
+            </li>
+            <li><i data-lucide="chevron-right" class="w-4 h-4 text-slate-600"></i></li>
+            <li>
+                <a href="{% url 'events:event_detail' event.id %}" class="text-sm font-bold text-slate-400 hover:text-white transition-colors">{{ event.title }}</a>
+            </li>
+            <li><i data-lucide="chevron-right" class="w-4 h-4 text-slate-600"></i></li>
+            <li>
+                <span class="text-sm font-black text-indigo-400">Custom Export Control Center</span>
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-12">
+        <div>
+            <h1 class="text-4xl font-black text-white font-heading text-glow tracking-tight leading-tight">
+                Export Roster Studio
+            </h1>
+            <p class="text-slate-400 text-sm mt-2">
+                Dynamically build your custom CSV export by selecting fields below. Verify output via the real-time live preview.
+            </p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="{% url 'events:event_detail' event.id %}" class="btn-glass inline-flex items-center px-5 py-2.5 rounded-2xl text-xs font-bold shadow-lg hover:scale-105 transition-all">
+                <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Back to Detail
+            </a>
+            <button id="btn-download" class="inline-flex items-center px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-sm font-black shadow-xl hover:scale-105 transition-all">
+                <i data-lucide="download" class="w-4.5 h-4.5 mr-2"></i> Download Roster
+            </button>
+        </div>
+    </div>
+
+    <!-- Core Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <!-- Fields Customizer Checkboxes -->
+        <div class="lg:col-span-1 space-y-6">
+            <div class="glass-card rounded-[2.5rem] p-8 border-white/5 space-y-6">
+                <div class="flex items-center justify-between pb-4 border-b border-white/5">
+                    <h3 class="text-lg font-black font-heading text-white flex items-center">
+                        <i data-lucide="sliders" class="w-5 h-5 mr-2.5 text-indigo-400"></i>
+                        Filter Columns
+                    </h3>
+                    <div class="flex items-center space-x-3">
+                        <button id="btn-select-all" class="text-[10px] font-black text-indigo-400 uppercase tracking-widest hover:text-indigo-300">All</button>
+                        <span class="text-slate-600 text-xs">|</span>
+                        <button id="btn-deselect-all" class="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-400">None</button>
+                    </div>
+                </div>
+
+                <!-- Personal Fields -->
+                <div class="space-y-3">
+                    <span class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Personal Data</span>
+                    <div class="grid grid-cols-1 gap-2.5">
+                        {% for fid, label in field_groups.personal %}
+                        <label class="flex items-center space-x-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl cursor-pointer border border-white/5 transition-all group">
+                            <input type="checkbox" name="export_field" value="{{ fid }}" checked class="w-4 h-4 text-emerald-500 border-white/10 rounded bg-slate-900 focus:ring-emerald-500">
+                            <span class="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">{{ label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Academic Fields -->
+                <div class="space-y-3">
+                    <span class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Academic Parameters</span>
+                    <div class="grid grid-cols-1 gap-2.5">
+                        {% for fid, label in field_groups.academic %}
+                        <label class="flex items-center space-x-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl cursor-pointer border border-white/5 transition-all group">
+                            <input type="checkbox" name="export_field" value="{{ fid }}" class="w-4 h-4 text-emerald-500 border-white/10 rounded bg-slate-900 focus:ring-emerald-500">
+                            <span class="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">{{ label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Professional Integrations -->
+                <div class="space-y-3">
+                    <span class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Professional Links</span>
+                    <div class="grid grid-cols-1 gap-2.5">
+                        {% for fid, label in field_groups.professional %}
+                        <label class="flex items-center space-x-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl cursor-pointer border border-white/5 transition-all group">
+                            <input type="checkbox" name="export_field" value="{{ fid }}" class="w-4 h-4 text-emerald-500 border-white/10 rounded bg-slate-900 focus:ring-emerald-500">
+                            <span class="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">{{ label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Registration State -->
+                <div class="space-y-3">
+                    <span class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Registration Status</span>
+                    <div class="grid grid-cols-1 gap-2.5">
+                        {% for fid, label in field_groups.registration %}
+                        <label class="flex items-center space-x-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl cursor-pointer border border-white/5 transition-all group">
+                            <input type="checkbox" name="export_field" value="{{ fid }}" checked class="w-4 h-4 text-emerald-500 border-white/10 rounded bg-slate-900 focus:ring-emerald-500">
+                            <span class="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">{{ label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Custom Event Fields (Dynamic Builder Form Fields) -->
+                {% if custom_fields %}
+                <div class="space-y-3">
+                    <span class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Dynamic Form Responses</span>
+                    <div class="grid grid-cols-1 gap-2.5">
+                        {% for cf in custom_fields %}
+                        <label class="flex items-center space-x-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl cursor-pointer border border-white/5 transition-all group">
+                            <input type="checkbox" name="export_field" value="custom_{{ cf.field_name }}" checked class="w-4 h-4 text-emerald-500 border-white/10 rounded bg-slate-900 focus:ring-emerald-500">
+                            <span class="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">{{ cf.label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Credentials State -->
+                <div class="space-y-3">
+                    <span class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Certificate Credentials</span>
+                    <div class="grid grid-cols-1 gap-2.5">
+                        {% for fid, label in field_groups.credentials %}
+                        <label class="flex items-center space-x-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl cursor-pointer border border-white/5 transition-all group">
+                            <input type="checkbox" name="export_field" value="{{ fid }}" class="w-4 h-4 text-emerald-500 border-white/10 rounded bg-slate-900 focus:ring-emerald-500">
+                            <span class="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">{{ label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Instantaneous Preview -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="glass-card rounded-[2.5rem] overflow-hidden border-white/5">
+                <div class="px-8 py-6 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <i data-lucide="eye" class="w-5 h-5 text-indigo-400"></i>
+                        <h3 class="text-lg font-black text-white font-heading">Interactive Live Preview</h3>
+                    </div>
+                    <span class="px-3 py-1 bg-white/5 text-slate-400 rounded-lg text-[10px] font-black uppercase border border-white/5">
+                        Showing first 5 records
+                    </span>
+                </div>
+                
+                <div class="overflow-x-auto min-h-[300px]">
+                    <table class="min-w-full divide-y divide-white/5" id="preview-table">
+                        <thead class="bg-white/5" id="preview-thead">
+                            <!-- JS Inject headers here -->
+                        </thead>
+                        <tbody class="divide-y divide-white/5" id="preview-tbody">
+                            <!-- JS Inject records here -->
+                        </tbody>
+                    </table>
+                    <div id="preview-empty" class="hidden p-20 text-center text-slate-500 font-medium italic text-xs">
+                        No columns selected. Check one or more columns to start.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Developer details / alert card -->
+            <div class="relative group rounded-[2.5rem] p-8 overflow-hidden bg-gradient-to-br from-slate-900 to-indigo-950 border border-white/5">
+                <div class="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
+                <div class="relative z-10 flex items-start space-x-4">
+                    <div class="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
+                        <i data-lucide="info" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-white font-heading">Export Studio Capabilities</h4>
+                        <p class="text-xs text-slate-400 leading-relaxed mt-1">
+                            The download will construct the CSV file exactly matching the fields and order checked above. Custom Dynamic fields are extracted natively from the registration JSON database payloads, resolving any changes safely.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Load pre-fetched preview data
+    const previewData = JSON.parse('{{ preview_data_json|escapejs }}');
+    
+    // Human readable field mappings
+    const fieldMappings = {};
+    
+    // Parse all inputs to initialize map
+    document.querySelectorAll('input[name="export_field"]').forEach(el => {
+        fieldMappings[el.value] = el.closest('label').querySelector('span').innerText.trim();
+    });
+
+    const getSelectedFields = () => {
+        return Array.from(document.querySelectorAll('input[name="export_field"]:checked')).map(el => el.value);
+    };
+
+    const updatePreviewTable = () => {
+        const selectedFields = getSelectedFields();
+        const thead = document.getElementById('preview-thead');
+        const tbody = document.getElementById('preview-tbody');
+        const table = document.getElementById('preview-table');
+        const emptyState = document.getElementById('preview-empty');
+
+        thead.innerHTML = '';
+        tbody.innerHTML = '';
+
+        if (selectedFields.length === 0) {
+            table.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+            return;
+        }
+
+        table.classList.remove('hidden');
+        emptyState.classList.add('hidden');
+
+        // Render Head
+        const trHead = document.createElement('tr');
+        selectedFields.forEach(field => {
+            const th = document.createElement('th');
+            th.className = 'px-8 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest';
+            th.innerText = fieldMappings[field] || field;
+            trHead.appendChild(th);
+        });
+        thead.appendChild(trHead);
+
+        // Render Body
+        if (previewData.length === 0) {
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = selectedFields.length;
+            td.className = 'px-8 py-10 text-center text-slate-500 italic text-xs';
+            td.innerText = 'No participant data available for preview.';
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+        } else {
+            previewData.forEach(record => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-white/5 transition-colors';
+                
+                selectedFields.forEach(field => {
+                    const td = document.createElement('td');
+                    td.className = 'px-8 py-4 text-xs text-slate-300 font-medium whitespace-nowrap';
+                    
+                    let val = record[field] !== undefined ? record[field] : '';
+                    if (val === null || val === undefined) val = '';
+                    
+                    // Style specific fields slightly for extra polish
+                    if (field === 'email' || field === 'participant_id' || field === 'certificate_id') {
+                        td.className += ' font-mono text-[11px] text-indigo-300/90';
+                    }
+                    if (field === 'status' || field === 'certificate_status') {
+                        // Renders with pill style inside preview
+                        const span = document.createElement('span');
+                        const isSuccess = ['Confirmed', 'Attended', 'Issued', 'Completed'].includes(val);
+                        span.className = `px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                            isSuccess ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                        }`;
+                        span.innerText = val;
+                        td.appendChild(span);
+                    } else {
+                        td.innerText = val;
+                    }
+                    
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+    };
+
+    // Watch Checkbox Toggles
+    document.querySelectorAll('input[name="export_field"]').forEach(el => {
+        el.addEventListener('change', () => {
+            updatePreviewTable();
+        });
+    });
+
+    // Select/Deselect All Handlers
+    document.getElementById('btn-select-all').addEventListener('click', () => {
+        document.querySelectorAll('input[name="export_field"]').forEach(el => el.checked = true);
+        updatePreviewTable();
+    });
+
+    document.getElementById('btn-deselect-all').addEventListener('click', () => {
+        document.querySelectorAll('input[name="export_field"]').forEach(el => el.checked = false);
+        updatePreviewTable();
+    });
+
+    // Handle CSV Download Execution
+    document.getElementById('btn-download').addEventListener('click', () => {
+        const selected = getSelectedFields();
+        if (selected.length === 0) {
+            alert('Please select at least one field to export.');
+            return;
+        }
+        
+        // Build GET query string redirection
+        const downloadUrl = "{% url 'events:event_export' event.id %}?format=csv&fields=" + encodeURIComponent(selected.join(','));
+        window.location.href = downloadUrl;
+    });
+
+    // Initialize on Page Load
+    updatePreviewTable();
+</script>
+{% endblock %}

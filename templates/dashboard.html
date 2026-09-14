@@ -1,110 +1,162 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Dashboard | CertiFlow Event Hub{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative">
     <!-- Decorative background glow -->
-    <div class="absolute top-0 right-0 -z-10 w-96 h-96 bg-emerald-600/10 rounded-full blur-[120px]"></div>
-    <div class="absolute bottom-0 left-0 -z-10 w-96 h-96 bg-cyan-600/10 rounded-full blur-[120px]"></div>
+    <div class="absolute top-0 right-0 -z-10 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 left-0 -z-10 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl"></div>
 
-    <!-- Header -->
-    <div class="md:flex md:items-center md:justify-between mb-12">
+    <!-- Header Section -->
+    <div class="md:flex md:items-center md:justify-between mb-10">
         <div class="flex-1 min-w-0">
-            <h1 class="text-4xl font-black leading-tight text-white tracking-tight font-heading text-glow">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="px-3 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full text-[10px] font-black uppercase tracking-widest">
+                    {{ user.get_role_display }} Workspace
+                </span>
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-black leading-tight text-white tracking-tight font-heading">
                 Welcome back, {{ user.first_name|default:user.email }}
             </h1>
-            <p class="mt-2 text-slate-400 font-medium">
+            <p class="mt-1 text-slate-400 text-sm font-medium">
                 {% if user.role == 'participant' %}
-                    Your personal hub for events and achievements.
+                    Track your registered events, access live entry passes, and download verified digital certificates.
                 {% else %}
-                    Institutional Command Center • <span class="text-indigo-400">Real-time Overview</span>
+                    Campus Event Command Center • Real-time registration metrics, attendance check-ins, and credential delivery.
                 {% endif %}
             </p>
         </div>
-        <div class="mt-6 flex md:mt-0 md:ml-4 space-x-4">
+        
+        <div class="mt-6 flex md:mt-0 md:ml-4 items-center gap-3 flex-wrap">
+            <a href="{% url 'registrations:public_list' %}" class="btn-glass inline-flex items-center px-4 py-2.5 rounded-xl text-xs font-bold transition-all">
+                <i data-lucide="compass" class="w-4 h-4 mr-2"></i> Public Marketplace
+            </a>
             {% if user.is_superuser or user.role == 'event_manager' or user.role == 'org_admin' %}
-            <button type="button" class="btn-glass inline-flex items-center px-5 py-2.5 rounded-xl text-sm font-bold transition-all">
-                <i data-lucide="download" class="w-4 h-4 mr-2"></i> Export Data
-            </button>
-            <a href="{% url 'events:event_create' %}" class="inline-flex items-center px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 hover:-translate-y-0.5 transition-all">
-                <i data-lucide="plus" class="w-4 h-4 mr-2"></i> New Event
+            <a href="{% url 'events:event_create' %}" class="inline-flex items-center px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-500/25 hover:bg-indigo-500 hover:-translate-y-0.5 transition-all">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Create Event
             </a>
             {% endif %}
         </div>
     </div>
 
-    <!-- Stats Grid -->
+    <!-- Quick Action Launchpad (Managers) -->
+    {% if user.role != 'participant' %}
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+        <a href="{% url 'events:event_create' %}" class="glass-card p-5 rounded-2xl flex items-center space-x-3.5 hover:border-indigo-500/40 group transition-all">
+            <div class="w-11 h-11 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                <i data-lucide="calendar-plus" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-white group-hover:text-indigo-400 transition-colors">New Event</p>
+                <p class="text-[10px] text-slate-400">Launch a program</p>
+            </div>
+        </a>
+
+        <a href="{% url 'certificates:template_create' %}" class="glass-card p-5 rounded-2xl flex items-center space-x-3.5 hover:border-emerald-500/40 group transition-all">
+            <div class="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                <i data-lucide="award" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors">Certificate Studio</p>
+                <p class="text-[10px] text-slate-400">Design credentials</p>
+            </div>
+        </a>
+
+        <a href="{% url 'events:event_list' %}" class="glass-card p-5 rounded-2xl flex items-center space-x-3.5 hover:border-purple-500/40 group transition-all">
+            <div class="w-11 h-11 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                <i data-lucide="layers" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-white group-hover:text-purple-400 transition-colors">All Events</p>
+                <p class="text-[10px] text-slate-400">Manage pipeline</p>
+            </div>
+        </a>
+
+        <a href="{% url 'certificates:certificate_list' %}" class="glass-card p-5 rounded-2xl flex items-center space-x-3.5 hover:border-amber-500/40 group transition-all">
+            <div class="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-white group-hover:text-amber-400 transition-colors">Certificates</p>
+                <p class="text-[10px] text-slate-400">Audit & issuance</p>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Key Metrics Grid -->
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-12">
         {% if user.role == 'participant' %}
             <!-- Participant Stats -->
-            <div class="glass-card rounded-[2rem] p-6 group reveal" style="transition-delay: 100ms">
+            <div class="glass-card rounded-3xl p-6 group">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-indigo-500/10 rounded-2xl p-4 border border-indigo-500/20 group-hover:scale-110 group-hover:[transform:translateZ(40px)] transition-all">
+                    <div class="flex-shrink-0 bg-indigo-500/10 rounded-2xl p-4 border border-indigo-500/20 group-hover:scale-105 transition-transform">
                         <i data-lucide="calendar" class="h-6 w-6 text-indigo-400"></i>
                     </div>
                     <div class="ml-5">
-                        <dt class="text-xs font-bold text-slate-400 uppercase tracking-widest">Upcoming</dt>
+                        <dt class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Upcoming Events</dt>
                         <dd class="text-3xl font-black text-white mt-1 count-up">{{ upcoming_count|default:0 }}</dd>
                     </div>
                 </div>
             </div>
-            <div class="glass-card rounded-[2rem] p-6 group reveal" style="transition-delay: 200ms">
+
+            <div class="glass-card rounded-3xl p-6 group">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-amber-500/10 rounded-2xl p-4 border border-amber-500/20 group-hover:scale-110 group-hover:[transform:translateZ(40px)] transition-all">
-                        <i data-lucide="award" class="h-6 w-6 text-amber-400"></i>
+                    <div class="flex-shrink-0 bg-emerald-500/10 rounded-2xl p-4 border border-emerald-500/20 group-hover:scale-105 transition-transform">
+                        <i data-lucide="award" class="h-6 w-6 text-emerald-400"></i>
                     </div>
                     <div class="ml-5">
-                        <dt class="text-xs font-bold text-slate-400 uppercase tracking-widest">Achievements</dt>
+                        <dt class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Achievements</dt>
                         <dd class="text-3xl font-black text-white mt-1 count-up">{{ certs_count|default:0 }}</dd>
                     </div>
                 </div>
             </div>
         {% else %}
             <!-- Manager Stats -->
-            <div class="glass-card rounded-[2.5rem] p-7 group reveal" style="transition-delay: 100ms">
+            <div class="glass-card rounded-3xl p-6 group">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-indigo-500/10 rounded-2xl p-4 border border-indigo-500/20 group-hover:[transform:translateZ(40px)] transition-all">
-                        <i data-lucide="calendar" class="h-7 w-7 text-indigo-400"></i>
+                    <div class="flex-shrink-0 bg-indigo-500/10 rounded-2xl p-4 border border-indigo-500/20 group-hover:scale-105 transition-transform">
+                        <i data-lucide="calendar" class="h-6 w-6 text-indigo-400"></i>
                     </div>
                     <div class="ml-5">
-                        <dt class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Active Events</dt>
+                        <dt class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Events</dt>
                         <dd class="text-3xl font-black text-white mt-1 count-up">{{ upcoming_count|default:0 }}</dd>
                     </div>
                 </div>
             </div>
 
-            <div class="glass-card rounded-[2.5rem] p-7 group reveal" style="transition-delay: 200ms">
+            <div class="glass-card rounded-3xl p-6 group">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-emerald-500/10 rounded-2xl p-4 border border-emerald-500/20 group-hover:[transform:translateZ(40px)] transition-all">
-                        <i data-lucide="users" class="h-7 w-7 text-emerald-400"></i>
+                    <div class="flex-shrink-0 bg-emerald-500/10 rounded-2xl p-4 border border-emerald-500/20 group-hover:scale-105 transition-transform">
+                        <i data-lucide="users" class="h-6 w-6 text-emerald-400"></i>
                     </div>
                     <div class="ml-5">
-                        <dt class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Participants</dt>
+                        <dt class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Attendees</dt>
                         <dd class="text-3xl font-black text-white mt-1 count-up">{{ total_registrations|default:0 }}</dd>
                     </div>
                 </div>
             </div>
 
-            <div class="glass-card rounded-[2.5rem] p-7 group reveal" style="transition-delay: 300ms">
+            <div class="glass-card rounded-3xl p-6 group">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-purple-500/10 rounded-2xl p-4 border border-purple-500/20 group-hover:[transform:translateZ(40px)] transition-all">
-                        <i data-lucide="check-circle" class="h-7 w-7 text-purple-400"></i>
+                    <div class="flex-shrink-0 bg-purple-500/10 rounded-2xl p-4 border border-purple-500/20 group-hover:scale-105 transition-transform">
+                        <i data-lucide="check-circle" class="h-6 w-6 text-purple-400"></i>
                     </div>
                     <div class="ml-5">
-                        <dt class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Attendance</dt>
+                        <dt class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Check-in Rate</dt>
                         <dd class="text-3xl font-black text-white mt-1">{{ attendance_rate|default:"0%" }}</dd>
                     </div>
                 </div>
             </div>
 
-            <div class="glass-card rounded-[2.5rem] p-7 group reveal" style="transition-delay: 400ms">
+            <div class="glass-card rounded-3xl p-6 group">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-amber-500/10 rounded-2xl p-4 border border-amber-500/20 group-hover:[transform:translateZ(40px)] transition-all">
-                        <i data-lucide="award" class="h-7 w-7 text-amber-400"></i>
+                    <div class="flex-shrink-0 bg-amber-500/10 rounded-2xl p-4 border border-amber-500/20 group-hover:scale-105 transition-transform">
+                        <i data-lucide="award" class="h-6 w-6 text-amber-400"></i>
                     </div>
                     <div class="ml-5">
-                        <dt class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Verified</dt>
+                        <dt class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Certificates Issued</dt>
                         <dd class="text-3xl font-black text-white mt-1 count-up">{{ total_certificates|default:0 }}</dd>
                     </div>
                 </div>
@@ -112,49 +164,96 @@
         {% endif %}
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        <!-- Main Section: Events -->
+    <!-- Main Layout: Events List & Sidebar -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Section: Events Pipeline -->
         <div class="lg:col-span-2 space-y-6">
-            <div class="glass-card rounded-[3rem] overflow-hidden">
-                <div class="px-8 py-6 border-b border-white/5 flex justify-between items-center bg-white/5">
-                    <h3 class="text-xl font-bold text-white font-heading">
-                        {% if user.role == 'participant' %}My Registered Events{% else %}Pipeline Overview{% endif %}
-                    </h3>
-                    <a href="{% url 'events:event_list' %}" class="btn-glass px-4 py-2 rounded-xl text-xs font-bold">View full list</a>
+            <div class="glass-card rounded-3xl overflow-hidden shadow-sm">
+                <div class="px-8 py-5 border-b border-white/5 flex justify-between items-center bg-white/5">
+                    <div>
+                        <h3 class="text-lg font-bold text-white font-heading">
+                            {% if user.role == 'participant' %}My Registered Events{% else %}Active Event Pipeline{% endif %}
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Real-time status of your ongoing and upcoming campus events</p>
+                    </div>
+                    <a href="{% url 'events:event_list' %}" class="btn-glass px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1">
+                        View all <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                    </a>
                 </div>
+                
                 <div class="divide-y divide-white/5">
                     {% for event in events %}
-                    <div class="p-8 hover:bg-white/5 transition-all group">
-                        <div class="flex items-center space-x-6">
-                            <div class="flex-shrink-0 h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
-                                <i data-lucide="calendar" class="w-7 h-7"></i>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <h4 class="text-lg font-bold text-white truncate group-hover:text-indigo-400 transition-colors">{{ event.title }}</h4>
-                                <div class="flex items-center mt-2 space-x-5 text-sm text-slate-400">
-                                    <span class="flex items-center"><i data-lucide="map-pin" class="w-4 h-4 mr-2 text-indigo-500"></i> {{ event.venue_name }}</span>
-                                    <span class="flex items-center"><i data-lucide="clock" class="w-4 h-4 mr-2 text-indigo-500"></i> {{ event.start_datetime|date:"M d" }}</span>
+                    <div class="p-6 sm:p-7 hover:bg-white/5 transition-all group">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="flex items-start space-x-4">
+                                <div class="flex-shrink-0 h-12 w-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition-transform mt-1 sm:mt-0">
+                                    <i data-lucide="calendar" class="w-6 h-6"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider {% if event.status == 'published' %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{% else %}bg-slate-500/10 text-slate-400 border border-slate-500/20{% endif %}">
+                                            {{ event.get_status_display }}
+                                        </span>
+                                        {% if event.is_online %}
+                                        <span class="text-[10px] text-emerald-400 font-bold flex items-center gap-0.5">
+                                            <i data-lucide="globe" class="w-3 h-3"></i> Online
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <h4 class="text-base font-bold text-white group-hover:text-indigo-400 transition-colors leading-snug">
+                                        <a href="{% url 'events:event_detail' event.id %}">{{ event.title }}</a>
+                                    </h4>
+                                    
+                                    <div class="flex flex-wrap items-center mt-2 gap-x-4 gap-y-1 text-xs text-slate-400">
+                                        <span class="flex items-center">
+                                            <i data-lucide="map-pin" class="w-3.5 h-3.5 mr-1 text-indigo-500"></i> {{ event.venue_name|default:"Online" }}
+                                        </span>
+                                        <span class="flex items-center">
+                                            <i data-lucide="clock" class="w-3.5 h-3.5 mr-1 text-indigo-500"></i> {{ event.start_datetime|date:"M d, Y • g:i A" }}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="flex items-center space-x-4">
-                                <span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest {% if event.status == 'published' %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{% else %}bg-slate-500/10 text-slate-400 border border-slate-500/20{% endif %}">
-                                    {{ event.get_status_display }}
-                                </span>
-                                <a href="{% url 'events:event_detail' event.id %}" class="p-3 bg-white/5 rounded-xl text-slate-400 hover:text-white hover:bg-indigo-600 transition-all">
-                                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
-                                </a>
+                            
+                            <div class="flex items-center justify-between sm:justify-end gap-2.5 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/5">
+                                <div class="text-right hidden sm:block mr-2">
+                                    <p class="text-xs font-bold text-white">{{ event.registered_count }} registered</p>
+                                    <p class="text-[10px] text-slate-400">Cap: {{ event.max_capacity|default:"Unlimited" }}</p>
+                                </div>
+                                {% if user.role == 'participant' %}
+                                    <a href="{% url 'attendance:participant_pass' event.id %}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-indigo-600/20">
+                                        <i data-lucide="ticket" class="w-3.5 h-3.5"></i> Entry Pass
+                                    </a>
+                                {% else %}
+                                    <button 
+                                        type="button" 
+                                        onclick="window.copyToClipboard('{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:register' event.id %}', this, 'Copied!')"
+                                        class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/5 transition-all text-xs"
+                                        title="Copy Public Registration Link"
+                                    >
+                                        <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                    <a 
+                                        href="{% url 'events:event_detail' event.id %}" 
+                                        class="px-4 py-2 bg-indigo-600/10 hover:bg-indigo-600 text-indigo-400 hover:text-white border border-indigo-500/20 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+                                    >
+                                        Manage <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                                    </a>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
                     {% empty %}
-                    <div class="p-20 text-center">
-                        <div class="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <i data-lucide="calendar-x" class="w-10 h-10 text-slate-600"></i>
+                    <div class="p-16 text-center">
+                        <div class="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/5">
+                            <i data-lucide="calendar-x" class="w-8 h-8 text-slate-500"></i>
                         </div>
-                        <p class="text-slate-500 font-medium">No events in your pipeline yet.</p>
+                        <h4 class="text-base font-bold text-white mb-1">No Active Events</h4>
+                        <p class="text-slate-400 text-xs max-w-sm mx-auto mb-6">Create your first campus event to begin managing registrations and issuing automated certificates.</p>
                         {% if user.role != 'participant' %}
-                        <a href="{% url 'events:event_create' %}" class="mt-6 inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-2xl text-sm font-bold shadow-lg hover:bg-indigo-500 transition-all">
-                            <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Create Your First Event
+                        <a href="{% url 'events:event_create' %}" class="inline-flex items-center px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-indigo-500 transition-all">
+                            <i data-lucide="plus" class="w-4 h-4 mr-1.5"></i> Create First Event
                         </a>
                         {% endif %}
                     </div>
@@ -163,62 +262,74 @@
             </div>
         </div>
 
-        <!-- Sidebar -->
-        <div class="space-y-8">
+        <!-- Sidebar Section -->
+        <div class="space-y-6">
             {% if user.role != 'participant' %}
-            <div class="glass-card rounded-[3rem] overflow-hidden">
-                <div class="px-8 py-6 border-b border-white/5 bg-white/5">
-                    <h3 class="text-lg font-bold text-white font-heading">Neural Activity</h3>
+            <!-- Recent Activity Log -->
+            <div class="glass-card rounded-3xl overflow-hidden shadow-sm">
+                <div class="px-6 py-5 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-white font-heading flex items-center gap-2">
+                        <i data-lucide="activity" class="w-4 h-4 text-indigo-400"></i> Recent Activity
+                    </h3>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Audit Log</span>
                 </div>
-                <div class="p-8">
-                    <ul class="space-y-8">
+                <div class="p-6">
+                    <ul class="space-y-5">
                         {% for log in activity_logs %}
-                        <li class="flex space-x-4 group">
-                            <div class="flex-shrink-0 relative">
-                                <div class="absolute inset-0 bg-indigo-500/20 blur-md rounded-full scale-0 group-hover:scale-100 transition-transform"></div>
-                                <span class="relative h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-indigo-400">
-                                    <i data-lucide="{% if log.action == 'scan' %}check{% elif log.action == 'issue_cert' %}award{% else %}zap{% endif %}" class="w-5 h-5"></i>
+                        <li class="flex items-start space-x-3.5 group">
+                            <div class="flex-shrink-0 mt-0.5">
+                                <span class="h-8 w-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-indigo-400 text-xs">
+                                    <i data-lucide="{% if log.action == 'scan' %}check{% elif log.action == 'issue_cert' %}award{% else %}zap{% endif %}" class="w-4 h-4"></i>
                                 </span>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm text-slate-300 leading-snug">
-                                    <span class="font-bold text-white">{{ log.user.get_short_name }}</span> {{ log.description }}
+                                <p class="text-xs text-slate-300 leading-snug">
+                                    <span class="font-bold text-white">{{ log.user.get_short_name|default:log.user.email }}</span> {{ log.description }}
                                 </p>
-                                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter mt-1">{{ log.timestamp|timesince }} ago</p>
+                                <p class="text-[10px] font-semibold text-slate-500 mt-0.5">{{ log.timestamp|timesince }} ago</p>
                             </div>
                         </li>
                         {% empty %}
-                        <li class="text-sm text-slate-500 text-center py-8 font-medium italic">Monitoring for activity...</li>
+                        <li class="text-xs text-slate-500 text-center py-6 font-medium italic">
+                            Activity logs will appear here as attendees register and check in.
+                        </li>
                         {% endfor %}
                     </ul>
                 </div>
             </div>
             {% else %}
-            <!-- Participant Quick Access -->
-            <div class="glass-card rounded-[3rem] p-8 text-center border-indigo-500/20">
-                <div class="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <i data-lucide="smartphone" class="w-10 h-10 text-indigo-400"></i>
+            <!-- Participant Pass Widget -->
+            <div class="glass-card rounded-3xl p-6 text-center border-indigo-500/20">
+                <div class="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-500/20 text-indigo-400">
+                    <i data-lucide="ticket" class="w-8 h-8"></i>
                 </div>
-                <h3 class="text-xl font-bold text-white mb-3">Quick QR Access</h3>
-                <p class="text-sm text-slate-400 mb-8 leading-relaxed">Select an event to instantly generate your digital attendance pass.</p>
-                <div class="p-4 bg-indigo-500/5 rounded-2xl border border-indigo-500/10 text-xs text-indigo-300 font-medium">
-                    <i data-lucide="shield-check" class="w-4 h-4 inline mr-1"></i> Security: Rotates every 20s
-                </div>
+                <h3 class="text-base font-bold text-white mb-1">Your Attendance Passes</h3>
+                <p class="text-xs text-slate-400 mb-6 leading-relaxed">Present your digital pass with secure rotating QR code at event entrances for instant check-in.</p>
+                <a href="{% url 'registrations:public_list' %}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold">
+                    Browse More Events
+                </a>
             </div>
             {% endif %}
 
-            <!-- Upgrade Banner -->
-            <div class="relative rounded-[3rem] p-8 overflow-hidden group">
-                <div class="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-800 opacity-90 transition-opacity group-hover:opacity-100"></div>
-                <!-- Animated background element -->
-                <div class="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
-                
-                <div class="relative z-10">
-                    <h3 class="text-xl font-bold text-white mb-2">Power User?</h3>
-                    <p class="text-indigo-100 text-sm mb-6 leading-relaxed">Unlock advanced API integrations and white-label certificate domains.</p>
-                    <a href="#" class="inline-flex items-center px-6 py-3 bg-white text-indigo-600 rounded-2xl text-sm font-black shadow-xl hover:scale-105 transition-all">
-                        Upgrade Now <i data-lucide="zap" class="w-4 h-4 ml-2 fill-current"></i>
-                    </a>
+            <!-- Security & Compliance Card -->
+            <div class="glass-card rounded-3xl p-6 space-y-4">
+                <div class="flex items-center space-x-3 text-emerald-400">
+                    <div class="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                        <i data-lucide="shield-check" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-white">Cryptographic Verification</h4>
+                        <p class="text-[10px] text-slate-400">Tamper-proof digital credentials</p>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    Certificates issued through CertiFlow contain embedded verification URLs and QR codes verifiable globally by employers and academic institutions.
+                </p>
+                <div class="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] font-bold">
+                    <span class="text-slate-400">Platform Status</span>
+                    <span class="text-emerald-400 flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Operational
+                    </span>
                 </div>
             </div>
         </div>

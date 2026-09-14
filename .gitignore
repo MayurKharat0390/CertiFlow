@@ -1,3 +1,33 @@
-media/
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+
+# Local environment & secrets
+.env
+.env.local
+
+# Databases
+*.sqlite3
+db.sqlite3
+
+# Uploaded user media & logs
+media/
+logs/
+*.log
+
+# Scratch scripts & temporary test files
+scratch/
+CricStake/
+
+# Virtual Environments
+venv/
+env/
+.venv/
+ENV/
+
+# OS / Editor artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

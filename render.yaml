@@ -30,6 +30,10 @@ services:
         value: "587"
       - key: EMAIL_USE_TLS
         value: "True"
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
 
   # 2. The Background Worker (Shared settings with Web)
   - type: worker
@@ -55,6 +59,10 @@ services:
         value: "587"
       - key: EMAIL_USE_TLS
         value: "True"
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
 
 databases:
   - name: centriflow-db

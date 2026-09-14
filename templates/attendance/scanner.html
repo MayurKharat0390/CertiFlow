@@ -1,153 +1,360 @@
 {% extends "base.html" %}
-
-{% block title %}Volunteer Scanner - {{ event.title }}{% endblock %}
+{% block title %}Scanner — {{ event.title }}{% endblock %}
 
 {% block extra_head %}
 <script src="https://unpkg.com/html5-qrcode"></script>
 {% endblock %}
 
 {% block content %}
-<div class="max-w-xl mx-auto px-4 py-8">
-    <div class="mb-6 flex items-center justify-between">
-        <div>
-            <h1 class="text-2xl font-bold font-heading text-gray-900">QR Scanner</h1>
-            <p class="text-sm text-gray-500">{{ event.title }}</p>
-        </div>
-        <div class="flex space-x-2">
-            <span id="scan-count" class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold">0 Scans</span>
-        </div>
+<div class="max-w-lg mx-auto px-4 py-8">
+
+  {# Header #}
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-black text-white font-heading">Volunteer Scanner</h1>
+      <p class="text-xs text-slate-500 mt-0.5">{{ event.title }}</p>
+    </div>
+    <div class="flex items-center space-x-3">
+      <span id="scan-count-badge"
+            class="px-3 py-1 bg-indigo-600/20 text-indigo-300 rounded-full text-xs font-black border border-indigo-500/20">
+        0 Scans
+      </span>
+      <a href="{% url 'events:event_detail' event.id %}"
+         class="btn-glass px-4 py-2 rounded-xl text-xs font-bold">← Back</a>
+    </div>
+  </div>
+
+  {# ── Camera Viewfinder ────────────────────────────────── #}
+  <div class="relative rounded-[2rem] overflow-hidden bg-black border border-white/10 shadow-2xl">
+    <div id="reader" class="w-full aspect-square"></div>
+
+    {# Animated scan frame overlay #}
+    <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+      <div class="relative w-56 h-56">
+        <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-indigo-400 rounded-tl-xl"></div>
+        <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-indigo-400 rounded-tr-xl"></div>
+        <div class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-indigo-400 rounded-bl-xl"></div>
+        <div class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-indigo-400 rounded-br-xl"></div>
+        {# Scanning laser line #}
+        <div id="scan-laser" class="absolute left-1 right-1 h-0.5 bg-indigo-400/80 rounded-full shadow-[0_0_8px_2px_rgba(99,102,241,0.6)] animate-scan-laser"></div>
+      </div>
     </div>
 
-    <!-- Scanner UI -->
-    <div class="bg-black rounded-3xl shadow-2xl overflow-hidden relative border-4 border-gray-900">
-        <div id="reader" class="w-full aspect-square"></div>
-        
-        <!-- Overlay -->
-        <div id="scan-overlay" class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
-            <div class="w-64 h-64 border-2 border-indigo-500 rounded-3xl opacity-50 relative">
-                <div class="absolute inset-0 border-4 border-indigo-500 rounded-3xl animate-pulse"></div>
-            </div>
-            <p class="mt-8 text-white text-sm font-medium tracking-widest uppercase opacity-70">Align QR Code within frame</p>
-        </div>
+    {# Status bar at bottom of viewfinder #}
+    <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent px-5 py-4">
+      <p id="scanner-hint" class="text-center text-white/50 text-xs font-medium tracking-wider uppercase">
+        Align participant's QR pass within frame
+      </p>
     </div>
+  </div>
 
-    <!-- Result Area -->
-    <div id="result-area" class="mt-8 hidden">
-        <div id="result-card" class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 transform transition-all duration-300 translate-y-4 opacity-0">
-            <div class="flex items-center">
-                <div id="result-icon" class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center mr-4">
-                    <!-- Icon injected by JS -->
-                </div>
-                <div class="flex-1">
-                    <h3 id="result-title" class="text-lg font-bold text-gray-900"></h3>
-                    <p id="result-subtitle" class="text-sm text-gray-500"></p>
-                </div>
-            </div>
-            <div id="result-message" class="mt-4 p-3 bg-gray-50 rounded-xl text-xs font-medium text-gray-600">
-                <!-- Message injected by JS -->
-            </div>
-        </div>
-    </div>
+  {# Controls #}
+  <div class="mt-4 grid grid-cols-2 gap-3">
+    <button id="switch-camera"
+            class="flex items-center justify-center py-3 px-4 bg-white/5 border border-white/10 rounded-2xl text-slate-300 text-xs font-bold hover:bg-white/10 transition-all">
+      <i data-lucide="flip-horizontal-2" class="w-4 h-4 mr-2"></i> Switch Camera
+    </button>
+    <button id="pause-btn"
+            class="flex items-center justify-center py-3 px-4 bg-white/5 border border-white/10 rounded-2xl text-slate-300 text-xs font-bold hover:bg-white/10 transition-all">
+      <i data-lucide="pause" class="w-4 h-4 mr-2" id="pause-icon"></i>
+      <span id="pause-label">Pause</span>
+    </button>
+  </div>
 
-    <div class="mt-8 grid grid-cols-2 gap-4">
-        <button id="switch-camera" class="flex items-center justify-center p-4 bg-gray-100 rounded-2xl text-gray-700 font-bold text-sm hover:bg-gray-200 transition-colors">
-            <i data-lucide="refresh-cw" class="w-5 h-5 mr-2"></i> Switch Camera
-        </button>
-        <button id="pause-scanner" class="flex items-center justify-center p-4 bg-gray-100 rounded-2xl text-gray-700 font-bold text-sm hover:bg-gray-200 transition-colors">
-            <i data-lucide="pause" class="w-5 h-5 mr-2"></i> Pause
-        </button>
-    </div>
 </div>
 
-<!-- Audio for scan feedback -->
-<audio id="beep-success" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"></audio>
-<audio id="beep-error" src="https://assets.mixkit.co/active_storage/sfx/2355/2355-preview.mp3"></audio>
+{# ── Action Panel (slides up after scan) ──────────────────────── #}
+<div id="action-panel"
+     class="fixed inset-x-0 bottom-0 z-50 transform translate-y-full transition-transform duration-500 ease-out"
+     style="max-height: 90vh; overflow-y: auto;">
+  <div class="bg-slate-900 border-t border-white/10 rounded-t-[2.5rem] shadow-2xl px-6 pt-6 pb-10">
+
+    {# Drag handle #}
+    <div class="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6"></div>
+
+    {# Loading state #}
+    <div id="panel-loading" class="py-10 text-center">
+      <div class="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+      <p class="text-slate-400 text-sm">Identifying participant...</p>
+    </div>
+
+    {# Participant info (shown after load) #}
+    <div id="panel-content" class="hidden">
+
+      {# Participant header #}
+      <div class="flex items-center space-x-4 mb-6">
+        <div id="panel-avatar"
+             class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xl font-black flex-shrink-0 shadow-lg">
+        </div>
+        <div class="flex-1 min-w-0">
+          <h2 id="panel-name" class="text-white font-black text-xl leading-tight"></h2>
+          <p id="panel-dept" class="text-slate-400 text-xs font-medium mt-0.5"></p>
+          <p id="panel-id" class="font-mono text-indigo-400 text-xs mt-1"></p>
+        </div>
+        {# Attendance status badge #}
+        <div id="panel-status-badge"
+             class="flex-shrink-0 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider">
+        </div>
+      </div>
+
+      {# Already checked-in notice #}
+      <div id="panel-already-in"
+           class="hidden mb-4 px-4 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center space-x-3">
+        <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400 flex-shrink-0"></i>
+        <div>
+          <p class="text-emerald-400 text-sm font-bold">Already Checked In</p>
+          <p id="panel-checkin-time" class="text-emerald-300/60 text-xs"></p>
+        </div>
+      </div>
+
+      {# Primary actions #}
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <button id="btn-attended"
+                onclick="performAction('mark_attended')"
+                class="py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black text-sm flex items-center justify-center space-x-2 transition-all active:scale-95 shadow-lg shadow-emerald-900/30">
+          <i data-lucide="user-check" class="w-5 h-5"></i><span>Mark Attended</span>
+        </button>
+        <button id="btn-absent"
+                onclick="performAction('mark_absent')"
+                class="py-4 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/20 rounded-2xl font-black text-sm flex items-center justify-center space-x-2 transition-all active:scale-95">
+          <i data-lucide="user-x" class="w-5 h-5"></i><span>Mark Absent</span>
+        </button>
+      </div>
+
+      <button id="btn-undo"
+              onclick="performAction('undo_checkin')"
+              class="hidden w-full mb-4 py-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl font-bold text-sm flex items-center justify-center space-x-2 transition-all hover:bg-amber-500/20">
+        <i data-lucide="undo-2" class="w-4 h-4"></i><span>Undo Check-in</span>
+      </button>
+
+      {# Divider #}
+      <div class="border-t border-white/5 my-4"></div>
+      <p class="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-3">More Actions</p>
+
+      {# Secondary actions #}
+      <div class="space-y-2">
+        <button onclick="performAction('issue_cert')" id="btn-cert"
+                class="w-full py-3 px-4 bg-white/5 hover:bg-white/10 rounded-2xl text-sm font-bold text-slate-300 flex items-center space-x-3 transition-all">
+          <i data-lucide="award" class="w-4 h-4 text-indigo-400"></i>
+          <span>Issue Certificate</span>
+          <span id="cert-status" class="ml-auto text-[10px] font-black text-slate-600"></span>
+        </button>
+        <button onclick="closePanel()"
+                class="w-full py-3 px-4 bg-white/5 hover:bg-white/10 rounded-2xl text-sm font-bold text-slate-500 flex items-center space-x-3 transition-all">
+          <i data-lucide="x" class="w-4 h-4"></i>
+          <span>Close &amp; scan next</span>
+        </button>
+      </div>
+
+    </div>
+
+    {# Error state #}
+    <div id="panel-error" class="hidden py-8 text-center">
+      <div class="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+        <i data-lucide="alert-triangle" class="w-8 h-8 text-red-400"></i>
+      </div>
+      <h3 class="text-white font-bold text-lg mb-1">Scan Failed</h3>
+      <p id="panel-error-msg" class="text-slate-400 text-sm"></p>
+      <button onclick="closePanel()" class="mt-6 px-6 py-3 bg-white/5 rounded-2xl text-sm font-bold text-slate-400 hover:bg-white/10 transition">
+        Try Again
+      </button>
+    </div>
+
+  </div>
+</div>
+
+{# Backdrop #}
+<div id="panel-backdrop"
+     class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden"
+     onclick="closePanel()"></div>
+
+{# Audio feedback #}
+<audio id="beep-ok"  src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
+<audio id="beep-err" src="https://assets.mixkit.co/active_storage/sfx/2355/2355-preview.mp3" preload="auto"></audio>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    let html5QrCode;
-    let isProcessing = false;
-    let scanCount = 0;
-    const eventId = "{{ event.id }}";
-    
-    const resultArea = document.getElementById('result-area');
-    const resultCard = document.getElementById('result-card');
-    const resultIcon = document.getElementById('result-icon');
-    const resultTitle = document.getElementById('result-title');
-    const resultSubtitle = document.getElementById('result-subtitle');
-    const resultMessage = document.getElementById('result-message');
-    
-    function showResult(success, data) {
-        resultArea.classList.remove('hidden');
-        resultCard.classList.remove('opacity-0', 'translate-y-4');
-        
-        if (success) {
-            document.getElementById('beep-success').play();
-            resultIcon.className = "flex-shrink-0 w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mr-4 text-green-600";
-            resultIcon.innerHTML = '<i data-lucide="check-circle" class="w-7 h-7"></i>';
-            resultTitle.innerText = data.participant || "Success";
-            resultSubtitle.innerText = `Type: ${data.scan_type.replace('_', ' ').toUpperCase()}`;
-            resultMessage.innerText = `Check-in recorded at ${data.time}. Verification successful.`;
-            scanCount++;
-            document.getElementById('scan-count').innerText = `${scanCount} Scans`;
-        } else {
-            document.getElementById('beep-error').play();
-            resultIcon.className = "flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mr-4 text-red-600";
-            resultIcon.innerHTML = '<i data-lucide="alert-circle" class="w-7 h-7"></i>';
-            resultTitle.innerText = "Access Denied";
-            resultSubtitle.innerText = "Verification Failed";
-            resultMessage.innerText = data.error || "The provided QR code is invalid or expired.";
-        }
-        
-        lucide.createIcons();
-        
-        // Auto hide result after 3 seconds
-        setTimeout(() => {
-            if (!isProcessing) {
-                resultCard.classList.add('opacity-0', 'translate-y-4');
-                setTimeout(() => resultArea.classList.add('hidden'), 300);
-            }
-        }, 3000);
-    }
+const EVENT_ID      = "{{ event.id }}";
+const CSRF          = "{{ csrf_token }}";
+const PROCESS_URL   = "{% url 'attendance:process_scan' %}";
+const ACTION_URL    = "{% url 'attendance:scan_action' %}";
 
-    async function onScanSuccess(decodedText, decodedResult) {
-        if (isProcessing) return;
-        
-        isProcessing = true;
-        
-        const formData = new FormData();
-        formData.append('token', decodedText);
-        formData.append('event_id', eventId);
-        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-        
-        try {
-            const response = await fetch('/attendance/api/process-scan/', {
-                method: 'POST',
-                body: formData
-            });
-            const data = await response.json();
-            showResult(data.success, data);
-        } catch (error) {
-            showResult(false, { error: "Network error. Please try again." });
-        } finally {
-            setTimeout(() => { isProcessing = false; }, 2000); // Cooldown
-        }
-    }
+let html5QrCode, paused = false, scanCount = 0, currentRegId = null;
 
-    function startScanner() {
-        html5QrCode = new Html5Qrcode("reader");
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-        
-        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
-    }
+// ── Panel helpers ─────────────────────────────────────────────
+const panel    = document.getElementById('action-panel');
+const backdrop = document.getElementById('panel-backdrop');
 
-    document.addEventListener('DOMContentLoaded', startScanner);
-    
-    document.getElementById('pause-scanner').addEventListener('click', () => {
-        if (html5QrCode) {
-            html5QrCode.pause();
-        }
+function openPanel() {
+  panel.classList.remove('translate-y-full');
+  backdrop.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  if (html5QrCode) try { html5QrCode.pause(); } catch(e){}
+}
+function closePanel() {
+  panel.classList.add('translate-y-full');
+  backdrop.classList.add('hidden');
+  document.body.style.overflow = '';
+  // Reset panel state
+  document.getElementById('panel-loading').classList.remove('hidden');
+  document.getElementById('panel-content').classList.add('hidden');
+  document.getElementById('panel-error').classList.add('hidden');
+  currentRegId = null;
+  if (html5QrCode) try { html5QrCode.resume(); } catch(e){}
+}
+
+function showPanelParticipant(data) {
+  const p = data.participant;
+  const a = data.attendance;
+  currentRegId = p.registration_id;
+
+  document.getElementById('panel-loading').classList.add('hidden');
+  document.getElementById('panel-error').classList.add('hidden');
+  document.getElementById('panel-content').classList.remove('hidden');
+
+  document.getElementById('panel-avatar').textContent = p.initials;
+  document.getElementById('panel-name').textContent   = p.name;
+  document.getElementById('panel-dept').textContent   = [p.department, p.year ? p.year + ' Year' : ''].filter(Boolean).join(' · ');
+  document.getElementById('panel-id').textContent     = p.id;
+
+  // Certificate status
+  document.getElementById('cert-status').textContent = data.certificate.issued ? '✓ Issued' : '';
+
+  // Attendance status
+  const badge = document.getElementById('panel-status-badge');
+  const alreadyIn = document.getElementById('panel-already-in');
+  const undoBtn   = document.getElementById('btn-undo');
+  const attendBtn = document.getElementById('btn-attended');
+
+  if (a.is_present) {
+    badge.className = 'flex-shrink-0 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+    badge.textContent = 'Checked In';
+    alreadyIn.classList.remove('hidden');
+    document.getElementById('panel-checkin-time').textContent = a.check_in_time ? `Checked in at ${a.check_in_time}` : '';
+    undoBtn.classList.remove('hidden');
+    attendBtn.classList.add('opacity-50', 'pointer-events-none');
+  } else {
+    badge.className = 'flex-shrink-0 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20';
+    badge.textContent = 'Registered';
+    alreadyIn.classList.add('hidden');
+    undoBtn.classList.add('hidden');
+    attendBtn.classList.remove('opacity-50', 'pointer-events-none');
+  }
+
+  lucide.createIcons();
+}
+
+function showPanelError(msg) {
+  document.getElementById('panel-loading').classList.add('hidden');
+  document.getElementById('panel-content').classList.add('hidden');
+  document.getElementById('panel-error').classList.remove('hidden');
+  document.getElementById('panel-error-msg').textContent = msg;
+  document.getElementById('beep-err').play().catch(()=>{});
+}
+
+// ── Scan handler ─────────────────────────────────────────────
+let processing = false;
+
+async function onScanSuccess(token) {
+  if (processing || currentRegId) return;
+  processing = true;
+  openPanel();
+
+  try {
+    const res = await fetch(PROCESS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ token, event_id: EVENT_ID }),
     });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('beep-ok').play().catch(()=>{});
+      showPanelParticipant(data);
+      scanCount++;
+      document.getElementById('scan-count-badge').textContent = `${scanCount} Scans`;
+    } else {
+      showPanelError(data.error || 'Invalid QR code');
+    }
+  } catch(e) {
+    showPanelError('Network error. Please try again.');
+  } finally {
+    processing = false;
+  }
+}
+
+// ── Action handler ────────────────────────────────────────────
+async function performAction(action) {
+  if (!currentRegId) return;
+  const btn = document.getElementById(action === 'mark_attended' ? 'btn-attended' :
+                                       action === 'mark_absent'   ? 'btn-absent'  :
+                                       action === 'undo_checkin'  ? 'btn-undo'    : 'btn-cert');
+  if (btn) { btn.disabled = true; btn.classList.add('opacity-50'); }
+
+  try {
+    const res = await fetch(ACTION_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ registration_id: currentRegId, action }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('beep-ok').play().catch(()=>{});
+      // Short delay then close so user sees feedback
+      document.getElementById('panel-hint' ) && (document.getElementById('panel-hint').textContent = data.message);
+      setTimeout(closePanel, 900);
+    } else {
+      alert(data.error || 'Action failed');
+      if (btn) { btn.disabled = false; btn.classList.remove('opacity-50'); }
+    }
+  } catch(e) {
+    alert('Network error');
+    if (btn) { btn.disabled = false; btn.classList.remove('opacity-50'); }
+  }
+}
+
+// ── Scanner init ─────────────────────────────────────────────
+function startScanner(facingMode = 'environment') {
+  html5QrCode = new Html5Qrcode('reader');
+  html5QrCode.start(
+    { facingMode },
+    { fps: 10, qrbox: { width: 220, height: 220 } },
+    onScanSuccess
+  ).catch(e => console.error('Scanner start error:', e));
+}
+
+document.getElementById('switch-camera').addEventListener('click', async () => {
+  try {
+    await html5QrCode.stop();
+    const cur = html5QrCode._currentCameraId;
+    startScanner(cur ? 'user' : 'environment');
+  } catch(e) {}
+});
+
+document.getElementById('pause-btn').addEventListener('click', () => {
+  if (!paused) {
+    try { html5QrCode.pause(); } catch(e) {}
+    document.getElementById('pause-label').textContent = 'Resume';
+    document.getElementById('pause-icon').setAttribute('data-lucide', 'play');
+    paused = true;
+  } else {
+    try { html5QrCode.resume(); } catch(e) {}
+    document.getElementById('pause-label').textContent = 'Pause';
+    document.getElementById('pause-icon').setAttribute('data-lucide', 'pause');
+    paused = false;
+  }
+  lucide.createIcons();
+});
+
+document.addEventListener('DOMContentLoaded', () => startScanner());
 </script>
+
+<style>
+@keyframes scan-laser {
+  0%   { top: 8px;  opacity: 1; }
+  50%  { top: calc(100% - 8px); opacity: 0.6; }
+  100% { top: 8px;  opacity: 1; }
+}
+.animate-scan-laser { animation: scan-laser 2s ease-in-out infinite; }
+</style>
 {% endblock %}

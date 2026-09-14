@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+{% block title %}Form Builder — {{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="flex flex-col h-screen overflow-hidden">
+
+  {# ── Top Bar ──────────────────────────────────────────────── #}
+  <div class="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-white/5 bg-slate-950/80 backdrop-blur-md z-30">
+    <div class="flex items-center space-x-4">
+      <a href="{% url 'events:event_detail' event.id %}"
+         class="text-slate-500 hover:text-white transition-colors flex items-center space-x-2 text-sm font-bold">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i><span>{{ event.title }}</span>
+      </a>
+      <span class="text-slate-700">/</span>
+      <span class="text-white font-black text-sm">Registration Form Builder</span>
+      <span id="save-indicator" class="hidden text-xs text-emerald-400 font-bold flex items-center space-x-1">
+        <i data-lucide="check" class="w-3 h-3"></i><span>Saved</span>
+      </span>
+    </div>
+    <div class="flex items-center space-x-3">
+      <button onclick="previewForm()"
+              class="btn-glass px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-2">
+        <i data-lucide="eye" class="w-4 h-4"></i><span>Preview</span>
+      </button>
+      <button onclick="saveForm()"
+              id="save-btn"
+              class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black flex items-center space-x-2 transition-all">
+        <i data-lucide="save" class="w-4 h-4"></i><span>Save Form</span>
+      </button>
+    </div>
+  </div>
+
+  {# ── Three-Column Layout ──────────────────────────────────── #}
+  <div class="flex flex-1 overflow-hidden">
+
+    {# LEFT: Field Type Palette #}
+    <div class="w-56 flex-shrink-0 border-r border-white/5 bg-slate-900/60 overflow-y-auto p-4">
+      <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Field Types</p>
+      <div class="space-y-2" id="field-palette">
+        {% for value, label in field_types %}
+        <button onclick="addField('{{ value }}')"
+                class="w-full text-left px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-indigo-500/30 transition-all group">
+          <div class="flex items-center space-x-3">
+            <span class="text-indigo-400 group-hover:text-indigo-300 transition-colors">
+              {% if value == 'text' %}<i data-lucide="type" class="w-4 h-4"></i>
+              {% elif value == 'textarea' %}<i data-lucide="align-left" class="w-4 h-4"></i>
+              {% elif value == 'select' %}<i data-lucide="chevrons-up-down" class="w-4 h-4"></i>
+              {% elif value == 'checkbox' %}<i data-lucide="check-square" class="w-4 h-4"></i>
+              {% elif value == 'radio' %}<i data-lucide="circle-dot" class="w-4 h-4"></i>
+              {% elif value == 'number' %}<i data-lucide="hash" class="w-4 h-4"></i>
+              {% elif value == 'file' %}<i data-lucide="paperclip" class="w-4 h-4"></i>
+              {% elif value == 'url' %}<i data-lucide="link" class="w-4 h-4"></i>
+              {% elif value == 'date' %}<i data-lucide="calendar" class="w-4 h-4"></i>
+              {% elif value == 'section' %}<i data-lucide="minus" class="w-4 h-4"></i>
+              {% else %}<i data-lucide="square" class="w-4 h-4"></i>{% endif %}
+            </span>
+            <span class="text-slate-300 text-xs font-bold">{{ label }}</span>
+          </div>
+        </button>
+        {% endfor %}
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-white/5">
+        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Steps</p>
+        <p class="text-xs text-slate-600">Assign fields to steps to create a multi-step wizard.</p>
+      </div>
+    </div>
+
+    {# CENTER: Form Canvas #}
+    <div class="flex-1 overflow-y-auto p-8 bg-slate-950">
+      <div class="max-w-xl mx-auto">
+        <div id="empty-state" class="text-center py-24 {% if fields_json != '[]' %}hidden{% endif %}">
+          <div class="w-20 h-20 rounded-3xl bg-white/5 border border-white/5 flex items-center justify-center mx-auto mb-4">
+            <i data-lucide="layout-list" class="w-10 h-10 text-slate-600"></i>
+          </div>
+          <h3 class="text-white font-bold text-lg mb-2">Start building your form</h3>
+          <p class="text-slate-500 text-sm">Click a field type on the left to add it to your form.</p>
+        </div>
+
+        <div id="fields-canvas" class="space-y-3"></div>
+
+        <div id="add-hint" class="mt-6 text-center {% if fields_json != '[]' %}block{% else %}hidden{% endif %}">
+          <button onclick="addField('text')"
+                  class="inline-flex items-center space-x-2 px-5 py-3 border border-dashed border-white/10 rounded-2xl text-slate-500 hover:text-white hover:border-indigo-500/40 transition-all text-sm font-bold">
+            <i data-lucide="plus" class="w-4 h-4"></i><span>Add another field</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {# RIGHT: Field Settings Panel #}
+    <div class="w-72 flex-shrink-0 border-l border-white/5 bg-slate-900/60 overflow-y-auto">
+      <div id="settings-empty" class="p-6 text-center pt-16">
+        <i data-lucide="mouse-pointer-2" class="w-8 h-8 text-slate-600 mx-auto mb-3"></i>
+        <p class="text-slate-500 text-sm">Select a field to edit its settings</p>
+      </div>
+      <div id="settings-panel" class="hidden p-5 space-y-4">
+        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Field Settings</p>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1.5">Label *</label>
+          <input id="s-label" type="text" placeholder="e.g. Your Department"
+                 class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none transition"
+                 oninput="updateSelectedField('label', this.value)">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1.5">Field Name (slug) *</label>
+          <input id="s-field-name" type="text" placeholder="e.g. department"
+                 class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white font-mono focus:border-indigo-500 focus:outline-none transition"
+                 oninput="updateSelectedField('field_name', this.value)">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1.5">Placeholder Text</label>
+          <input id="s-placeholder" type="text" placeholder="e.g. Enter your department"
+                 class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none transition"
+                 oninput="updateSelectedField('placeholder', this.value)">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1.5">Helper Text</label>
+          <input id="s-help" type="text" placeholder="Shown below the field"
+                 class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none transition"
+                 oninput="updateSelectedField('help_text_extra', this.value)">
+        </div>
+
+        <div id="s-options-wrap" class="hidden">
+          <label class="block text-xs font-bold text-slate-400 mb-1.5">Options (comma-separated)</label>
+          <textarea id="s-options" rows="3" placeholder="Option A, Option B, Option C"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none transition resize-none"
+                    oninput="updateSelectedField('options', this.value)"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1.5">Wizard Step</label>
+          <select id="s-step" onchange="updateSelectedField('step_number', parseInt(this.value))"
+                  class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none transition">
+            <option value="1">Step 1</option>
+            <option value="2">Step 2</option>
+            <option value="3">Step 3</option>
+            <option value="4">Step 4</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1.5">Pre-fill from Profile</label>
+          <select id="s-prefill" onchange="updateSelectedField('prefill_from', this.value)"
+                  class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none transition">
+            {% for value, label in prefill_options %}
+            <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="flex items-center justify-between py-2">
+          <label class="text-xs font-bold text-slate-400">Required Field</label>
+          <button id="s-required-btn" onclick="toggleRequired()"
+                  class="relative w-10 h-5 rounded-full transition-colors">
+            <span id="s-required-knob" class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"></span>
+          </button>
+        </div>
+
+        <div class="pt-4 border-t border-white/5">
+          <p class="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-3">Conditional Logic</p>
+          <p class="text-xs text-slate-600 mb-2">Show this field only if:</p>
+          <input id="s-cond-field" type="text" placeholder="field_name"
+                 class="w-full mb-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none transition"
+                 oninput="updateCondition()">
+          <input id="s-cond-value" type="text" placeholder="equals value"
+                 class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none transition"
+                 oninput="updateCondition()">
+        </div>
+
+        <button onclick="deleteSelectedField()"
+                class="w-full mt-2 py-2.5 rounded-xl border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/10 text-xs font-bold transition flex items-center justify-center space-x-2">
+          <i data-lucide="trash-2" class="w-4 h-4"></i><span>Delete Field</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{# Preview Modal #}
+<div id="preview-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-white/5">
+      <p class="text-white font-black">Form Preview</p>
+      <button onclick="document.getElementById('preview-modal').classList.add('hidden')"
+              class="text-slate-500 hover:text-white transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <div id="preview-content" class="overflow-y-auto p-6 space-y-4 flex-1"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── State ──────────────────────────────────────────────────
+let fields = {{ fields_json|safe }};
+let selectedId = null;
+let fieldCounter = fields.length;
+
+// ── Render canvas ─────────────────────────────────────────
+function renderCanvas() {
+  const canvas   = document.getElementById('fields-canvas');
+  const empty    = document.getElementById('empty-state');
+  const addHint  = document.getElementById('add-hint');
+  canvas.innerHTML = '';
+
+  if (fields.length === 0) {
+    empty.classList.remove('hidden');
+    addHint.classList.add('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  addHint.classList.remove('hidden');
+
+  fields.forEach((f, idx) => {
+    const isSelected = f.id === selectedId;
+    const card = document.createElement('div');
+    card.className = `relative group rounded-2xl border transition-all cursor-pointer p-4
+      ${isSelected ? 'border-indigo-500/60 bg-indigo-600/10' : 'border-white/5 bg-white/5 hover:border-white/15'}`;
+    card.onclick = () => selectField(f.id);
+
+    const typeLabel = getTypeLabel(f.field_type);
+    const prefillBadge = f.prefill_from
+      ? `<span class="ml-2 px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-md text-[9px] font-black uppercase">Pre-fill: ${f.prefill_from}</span>`
+      : '';
+    const condBadge = f.conditional_logic && f.conditional_logic.field_name
+      ? `<span class="ml-2 px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded-md text-[9px] font-black uppercase">Conditional</span>`
+      : '';
+    const reqBadge = f.is_required
+      ? `<span class="text-red-400 ml-0.5 font-black">*</span>` : '';
+
+    card.innerHTML = `
+      <div class="flex items-start justify-between">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center flex-wrap gap-1 mb-1">
+            <span class="text-[10px] font-black text-indigo-400 uppercase tracking-wider">${typeLabel}</span>
+            ${prefillBadge}${condBadge}
+          </div>
+          <p class="text-white font-bold text-sm truncate">${f.label || '<em class="text-slate-600">Untitled</em>'}${reqBadge}</p>
+          ${f.placeholder ? `<p class="text-slate-600 text-xs mt-0.5 truncate">${f.placeholder}</p>` : ''}
+          <p class="text-slate-700 text-[10px] mt-1 font-mono">step ${f.step_number} · ${f.field_name || '?'}</p>
+        </div>
+        <div class="flex items-center space-x-1 ml-3 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button onclick="event.stopPropagation(); moveField(${idx}, -1)"
+                  class="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition"
+                  ${idx === 0 ? 'disabled' : ''}>
+            <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
+          </button>
+          <button onclick="event.stopPropagation(); moveField(${idx}, 1)"
+                  class="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition"
+                  ${idx === fields.length - 1 ? 'disabled' : ''}>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+    `;
+    canvas.appendChild(card);
+  });
+  lucide.createIcons();
+}
+
+function getTypeLabel(t) {
+  const map = { text:'Short Text', textarea:'Long Text', select:'Dropdown', checkbox:'Checkbox',
+                radio:'Radio', number:'Number', file:'File Upload', url:'URL', date:'Date', section:'Section' };
+  return map[t] || t;
+}
+
+// ── Add field ──────────────────────────────────────────────
+function addField(type) {
+  const id   = `f_${++fieldCounter}`;
+  const slug = type + '_' + fieldCounter;
+  const field = {
+    id, label: '', field_name: slug, field_type: type,
+    options: '', is_required: true, order: fields.length,
+    step_number: 1, placeholder: '', help_text_extra: '',
+    conditional_logic: {}, prefill_from: '',
+  };
+  fields.push(field);
+  selectedId = id;
+  renderCanvas();
+  showSettings(field);
+}
+
+// ── Select field ──────────────────────────────────────────
+function selectField(id) {
+  selectedId = id;
+  const f = fields.find(x => x.id === id);
+  if (f) showSettings(f);
+  renderCanvas();
+}
+
+// ── Move field ────────────────────────────────────────────
+function moveField(idx, dir) {
+  const target = idx + dir;
+  if (target < 0 || target >= fields.length) return;
+  [fields[idx], fields[target]] = [fields[target], fields[idx]];
+  renderCanvas();
+}
+
+// ── Update field ──────────────────────────────────────────
+function updateSelectedField(key, value) {
+  if (!selectedId) return;
+  const f = fields.find(x => x.id === selectedId);
+  if (f) { f[key] = value; renderCanvas(); }
+}
+
+function updateCondition() {
+  const fieldName = document.getElementById('s-cond-field').value.trim();
+  const value     = document.getElementById('s-cond-value').value.trim();
+  updateSelectedField('conditional_logic', fieldName ? { field_name: fieldName, operator: 'equals', value } : {});
+}
+
+let isRequired = true;
+function toggleRequired() {
+  isRequired = !isRequired;
+  updateSelectedField('is_required', isRequired);
+  const btn  = document.getElementById('s-required-btn');
+  const knob = document.getElementById('s-required-knob');
+  btn.className  = `relative w-10 h-5 rounded-full transition-colors ${isRequired ? 'bg-indigo-600' : 'bg-white/10'}`;
+  knob.className = `absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${isRequired ? 'left-5' : 'left-0.5'}`;
+}
+
+// ── Settings panel ────────────────────────────────────────
+function showSettings(f) {
+  document.getElementById('settings-empty').classList.add('hidden');
+  document.getElementById('settings-panel').classList.remove('hidden');
+
+  document.getElementById('s-label').value       = f.label;
+  document.getElementById('s-field-name').value  = f.field_name;
+  document.getElementById('s-placeholder').value = f.placeholder;
+  document.getElementById('s-help').value        = f.help_text_extra;
+  document.getElementById('s-options').value     = f.options;
+  document.getElementById('s-step').value        = f.step_number;
+  document.getElementById('s-prefill').value     = f.prefill_from;
+
+  const hasOpts = ['select','radio','checkbox'].includes(f.field_type);
+  document.getElementById('s-options-wrap').classList.toggle('hidden', !hasOpts);
+
+  isRequired = f.is_required;
+  const btn  = document.getElementById('s-required-btn');
+  const knob = document.getElementById('s-required-knob');
+  btn.className  = `relative w-10 h-5 rounded-full transition-colors ${isRequired ? 'bg-indigo-600' : 'bg-white/10'}`;
+  knob.className = `absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${isRequired ? 'left-5' : 'left-0.5'}`;
+
+  if (f.conditional_logic && f.conditional_logic.field_name) {
+    document.getElementById('s-cond-field').value = f.conditional_logic.field_name;
+    document.getElementById('s-cond-value').value = f.conditional_logic.value || '';
+  } else {
+    document.getElementById('s-cond-field').value = '';
+    document.getElementById('s-cond-value').value = '';
+  }
+
+  lucide.createIcons();
+}
+
+function deleteSelectedField() {
+  if (!selectedId) return;
+  if (!confirm('Delete this field?')) return;
+  fields = fields.filter(f => f.id !== selectedId);
+  selectedId = null;
+  document.getElementById('settings-empty').classList.remove('hidden');
+  document.getElementById('settings-panel').classList.add('hidden');
+  renderCanvas();
+}
+
+// ── Save ──────────────────────────────────────────────────
+async function saveForm() {
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>';
+
+  try {
+    const res = await fetch("{% url 'events:save_form_schema' event.id %}", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+      body: JSON.stringify({ fields }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      const ind = document.getElementById('save-indicator');
+      ind.classList.remove('hidden');
+      setTimeout(() => ind.classList.add('hidden'), 3000);
+    } else {
+      alert('Save failed: ' + (data.error || 'Unknown error'));
+    }
+  } catch(e) {
+    alert('Network error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i><span>Save Form</span>';
+    lucide.createIcons();
+  }
+}
+
+// ── Preview ───────────────────────────────────────────────
+function previewForm() {
+  const container = document.getElementById('preview-content');
+  container.innerHTML = '';
+  if (fields.length === 0) {
+    container.innerHTML = '<p class="text-slate-500 text-center py-8">No fields yet</p>';
+  } else {
+    fields.forEach(f => {
+      const wrap = document.createElement('div');
+      wrap.className = 'space-y-1';
+      let inputHtml = '';
+      if (f.field_type === 'section') {
+        wrap.innerHTML = `<div class="pt-4 border-t border-white/5"><p class="text-sm font-black text-white">${f.label}</p>${f.help_text_extra ? `<p class="text-xs text-slate-500">${f.help_text_extra}</p>` : ''}</div>`;
+        container.appendChild(wrap);
+        return;
+      }
+      const label = `<label class="block text-xs font-bold text-slate-400">${f.label}${f.is_required ? '<span class="text-red-400 ml-0.5">*</span>' : ''}</label>`;
+      if (['text','number','url','date'].includes(f.field_type)) {
+        inputHtml = `<input type="${f.field_type}" placeholder="${f.placeholder}" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none" disabled>`;
+      } else if (f.field_type === 'textarea') {
+        inputHtml = `<textarea rows="2" placeholder="${f.placeholder}" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white resize-none" disabled></textarea>`;
+      } else if (f.field_type === 'select') {
+        const opts = f.options.split(',').map(o => `<option>${o.trim()}</option>`).join('');
+        inputHtml = `<select class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-slate-400" disabled><option>Select an option</option>${opts}</select>`;
+      } else if (['radio','checkbox'].includes(f.field_type)) {
+        const opts = f.options.split(',').map(o => `<label class="flex items-center space-x-2 text-slate-300 text-sm"><input type="${f.field_type}" disabled class="mr-2"> ${o.trim()}</label>`).join('');
+        inputHtml = `<div class="space-y-1 mt-1">${opts}</div>`;
+      } else if (f.field_type === 'file') {
+        inputHtml = `<div class="border border-dashed border-white/10 rounded-xl p-4 text-center text-slate-500 text-xs">Click to upload file</div>`;
+      }
+      const hint = f.help_text_extra ? `<p class="text-xs text-slate-600">${f.help_text_extra}</p>` : '';
+      wrap.innerHTML = label + inputHtml + hint;
+      container.appendChild(wrap);
+    });
+  }
+  document.getElementById('preview-modal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+// ── Init ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  renderCanvas();
+  if (fields.length > 0) { selectedId = fields[0].id; showSettings(fields[0]); renderCanvas(); }
+});
+</script>
+{% endblock %}

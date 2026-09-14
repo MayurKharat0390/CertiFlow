@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Flagged Scans — {{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+
+  {# ── Header ─────────────────────────────────────────── #}
+  <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <div class="flex items-center space-x-2">
+        <span class="px-2.5 py-0.5 bg-rose-500/20 text-rose-300 rounded-full text-xs font-black border border-rose-500/20 uppercase tracking-wider animate-pulse">
+          Suspicious Activity
+        </span>
+      </div>
+      <h1 class="text-3xl font-black text-white font-heading mt-2">Flagged Scans Review</h1>
+      <p class="text-sm text-slate-400 mt-1">Review potentially fraudulent scans for <span class="text-indigo-400 font-semibold">{{ event.title }}</span></p>
+    </div>
+    <div class="flex items-center space-x-3">
+      <a href="{% url 'attendance:room_qr' event.id %}"
+         class="btn-glass px-5 py-2.5 rounded-xl text-xs font-bold transition-all hover:scale-102 flex items-center">
+        <i data-lucide="qr-code" class="w-4 h-4 mr-2 text-indigo-400"></i> Back to Room QR
+      </a>
+      <a href="{% url 'events:event_detail' event.id %}"
+         class="btn-glass px-5 py-2.5 rounded-xl text-xs font-bold transition-all hover:scale-102 flex items-center">
+        <i data-lucide="calendar" class="w-4 h-4 mr-2 text-slate-400"></i> Event Details
+      </a>
+    </div>
+  </div>
+
+  {# ── Summary Cards ──────────────────────────────────── #}
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div class="bg-slate-900/60 border border-white/5 rounded-2xl p-5 backdrop-blur-md">
+      <div class="flex items-center justify-between">
+        <span class="text-slate-400 text-xs font-medium uppercase tracking-wider">Total Flagged</span>
+        <div class="p-2 bg-rose-500/10 rounded-xl">
+          <i data-lucide="shield-alert" class="w-5 h-5 text-rose-400"></i>
+        </div>
+      </div>
+      <p class="text-3xl font-black text-white mt-2">{{ flagged_scans.count }}</p>
+    </div>
+    <div class="bg-slate-900/60 border border-white/5 rounded-2xl p-5 backdrop-blur-md">
+      <div class="flex items-center justify-between">
+        <span class="text-slate-400 text-xs font-medium uppercase tracking-wider">Pending Review</span>
+        <div class="p-2 bg-amber-500/10 rounded-xl">
+          <i data-lucide="clock" class="w-5 h-5 text-amber-400"></i>
+        </div>
+      </div>
+      <p class="text-3xl font-black text-white mt-2">
+        {% with pending_count=flagged_scans|regroup:"flag_reviewed" %}
+          {# Simply show count of reviewed=False items #}
+          {{ flagged_scans.count }}
+        {% endwith %}
+      </p>
+    </div>
+    <div class="bg-slate-900/60 border border-white/5 rounded-2xl p-5 backdrop-blur-md">
+      <div class="flex items-center justify-between">
+        <span class="text-slate-400 text-xs font-medium uppercase tracking-wider">Attendance Mode</span>
+        <div class="p-2 bg-indigo-500/10 rounded-xl">
+          <i data-lucide="settings" class="w-5 h-5 text-indigo-400"></i>
+        </div>
+      </div>
+      <p class="text-sm font-black text-white mt-3 uppercase tracking-wider">
+        {{ event.get_attendance_mode_display }}
+      </p>
+    </div>
+  </div>
+
+  {# ── Flagged Scans List ─────────────────────────────── #}
+  {% if flagged_scans %}
+    <div class="space-y-4">
+      {% for scan in flagged_scans %}
+        <div class="bg-slate-900/40 border border-white/10 rounded-2xl p-6 backdrop-blur-md transition-all hover:border-white/15 {% if scan.flag_reviewed %}opacity-60{% endif %}">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            
+            {# Left: User Profile & Flag Status #}
+            <div class="flex items-start space-x-4 min-w-0 flex-1">
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg font-black flex-shrink-0 shadow-lg mt-1">
+                {{ scan.registration.user.first_name|slice:":1" }}{{ scan.registration.user.last_name|slice:":1" }}
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="text-white font-black text-lg truncate">{{ scan.registration.user.get_full_name }}</h3>
+                  <span class="px-2 py-0.5 bg-rose-500/15 text-rose-300 border border-rose-500/20 rounded-md text-[10px] font-black uppercase tracking-wider">
+                    {{ scan.scan_flag|default:"Suspicious" }}
+                  </span>
+                  {% if scan.flag_reviewed %}
+                    {% if scan.is_accepted %}
+                      <span class="px-2 py-0.5 bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 rounded-md text-[10px] font-black uppercase tracking-wider">
+                        Approved
+                      </span>
+                    {% else %}
+                      <span class="px-2 py-0.5 bg-slate-500/15 text-slate-400 border border-white/10 rounded-md text-[10px] font-black uppercase tracking-wider">
+                        Rejected
+                      </span>
+                    {% endif %}
+                  {% else %}
+                    <span class="px-2 py-0.5 bg-amber-500/15 text-amber-300 border border-amber-500/20 rounded-md text-[10px] font-black uppercase tracking-wider">
+                      Needs Action
+                    </span>
+                  {% endif %}
+                </div>
+                <p class="text-slate-400 text-xs mt-0.5 truncate">{{ scan.registration.user.email }} · {{ scan.registration.user.department|default:"No Department" }}</p>
+                
+                {# Technical Scan Details #}
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 mt-4 pt-4 border-t border-white/5 text-slate-500 text-xs">
+                  <div class="flex items-center">
+                    <i data-lucide="globe" class="w-3.5 h-3.5 mr-2 text-slate-600"></i>
+                    <span class="truncate">IP: <span class="font-mono text-slate-400">{{ scan.ip_address|default:"Unknown" }}</span></span>
+                  </div>
+                  <div class="flex items-center">
+                    <i data-lucide="smartphone" class="w-3.5 h-3.5 mr-2 text-slate-600"></i>
+                    <span class="truncate">Device: <span class="font-mono text-slate-400" title="{{ scan.device_fingerprint }}">{{ scan.device_fingerprint|slice:":15" }}...</span></span>
+                  </div>
+                  <div class="flex items-center">
+                    <i data-lucide="calendar-days" class="w-3.5 h-3.5 mr-2 text-slate-600"></i>
+                    <span>Scan Time: <span class="text-slate-400">{{ scan.scan_time|date:"H:i:s" }}</span> (Win: #{{ scan.window_number }})</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {# Right: Action Buttons #}
+            <div class="flex items-center sm:justify-end gap-3 flex-shrink-0 lg:border-l lg:border-white/5 lg:pl-6">
+              {% if not scan.flag_reviewed %}
+                <form method="POST" action="{% url 'attendance:flagged_scans' event.id %}" class="inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="scan_id" value="{{ scan.id }}">
+                  <input type="hidden" name="action" value="approve">
+                  <button type="submit"
+                          class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all hover:scale-102 flex items-center shadow-lg shadow-emerald-950/20">
+                    <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> Approve
+                  </button>
+                </form>
+                <form method="POST" action="{% url 'attendance:flagged_scans' event.id %}" class="inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="scan_id" value="{{ scan.id }}">
+                  <input type="hidden" name="action" value="reject">
+                  <button type="submit"
+                          class="px-4 py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-200 border border-rose-500/30 rounded-xl text-xs font-bold transition-all hover:scale-102 flex items-center">
+                    <i data-lucide="x-circle" class="w-4 h-4 mr-2 text-rose-400"></i> Reject & Revoke
+                  </button>
+                </form>
+              {% else %}
+                <span class="text-xs text-slate-500 italic">Reviewed by manager</span>
+              {% endif %}
+            </div>
+
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    {# Empty State #}
+    <div class="text-center py-16 bg-slate-900/20 border border-white/5 rounded-2xl backdrop-blur-md">
+      <div class="w-16 h-16 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-500/20">
+        <i data-lucide="shield-check" class="w-8 h-8"></i>
+      </div>
+      <h2 class="text-xl font-bold text-white">No Suspicious Activity</h2>
+      <p class="text-slate-400 text-sm mt-1 max-w-sm mx-auto">Awesome! All scanned participants passed security layers without flagging so far.</p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

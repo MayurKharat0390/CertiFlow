@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block title %}Room QR — {{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative">
+
+  {# Background glow #}
+  <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+  {# Header #}
+  <div class="w-full max-w-md mb-6 flex items-center justify-between">
+    <div>
+      <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Mode B — Room QR</p>
+      <h1 class="text-xl font-black text-white font-heading mt-0.5">{{ event.title }}</h1>
+    </div>
+    <div class="flex items-center space-x-2">
+      <a href="{% url 'events:event_detail' event.id %}"
+         class="btn-glass px-4 py-2 rounded-xl text-xs font-bold">← Back</a>
+    </div>
+  </div>
+
+  {# ── Main QR Display ─────────────────────────────────────── #}
+  <div class="w-full max-w-md">
+    <div class="relative rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl"
+         style="background: linear-gradient(135deg,#0f172a 0%,#1e1b4b 100%)">
+
+      {# Glow accents #}
+      <div class="absolute -top-16 -right-16 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-16 -left-16 w-48 h-48 bg-purple-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="relative p-8 flex flex-col items-center">
+
+        {# Status pill #}
+        <div id="window-status" class="mb-6 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest
+             {% if event.attendance_window_open %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30{% else %}bg-red-500/20 text-red-400 border border-red-500/30{% endif %}">
+          {% if event.attendance_window_open %}● Scanning Open{% else %}○ Scanning Closed{% endif %}
+        </div>
+
+        {# QR Box #}
+        <div class="bg-white rounded-3xl p-5 shadow-2xl mb-6 relative" id="qr-wrapper">
+          <div id="qr-loading" class="w-64 h-64 flex items-center justify-center">
+            <div class="w-10 h-10 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <img id="qr-image" src="" alt="Event QR" class="hidden w-64 h-64 object-contain">
+
+          {# Shimmer overlay while refreshing #}
+          <div id="qr-shimmer"
+               class="absolute inset-0 rounded-3xl bg-white/40 hidden transition-opacity duration-300"></div>
+        </div>
+
+        {# Timer ring #}
+        <div class="flex items-center space-x-3 mb-6">
+          <div class="relative w-10 h-10">
+            <svg class="w-10 h-10 -rotate-90" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="3"/>
+              <circle id="timer-ring" cx="18" cy="18" r="15.9" fill="none"
+                      stroke="#6366f1" stroke-width="3"
+                      stroke-dasharray="100 100" stroke-linecap="round"/>
+            </svg>
+            <span id="timer-seconds" class="absolute inset-0 flex items-center justify-center text-xs font-black text-white">—</span>
+          </div>
+          <div>
+            <p class="text-slate-300 text-sm font-bold">Refreshes automatically</p>
+            <p class="text-slate-500 text-xs">Every {{ event.qr_roll_interval }}s · participants scan this</p>
+          </div>
+        </div>
+
+        {# Stats row #}
+        <div class="w-full grid grid-cols-2 gap-3 mb-6">
+          <div class="bg-white/5 rounded-2xl p-4 border border-white/5 text-center">
+            <p class="text-2xl font-black text-white" id="stat-scanned">{{ scan_count }}</p>
+            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Checked In</p>
+          </div>
+          <div class="bg-white/5 rounded-2xl p-4 border border-white/5 text-center">
+            <p class="text-2xl font-black {% if flagged_count %}text-amber-400{% else %}text-white{% endif %}"
+               id="stat-flagged">{{ flagged_count }}</p>
+            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Flagged</p>
+          </div>
+        </div>
+
+        {# Toggle window button #}
+        <button id="toggle-btn"
+                onclick="toggleWindow()"
+                class="w-full py-4 rounded-2xl font-black text-sm transition-all active:scale-95 flex items-center justify-center space-x-2
+                       {% if event.attendance_window_open %}bg-red-600/20 border border-red-500/20 text-red-400 hover:bg-red-600/30{% else %}bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-900/40{% endif %}">
+          <i data-lucide="{% if event.attendance_window_open %}pause-circle{% else %}play-circle{% endif %}" class="w-5 h-5" id="toggle-icon"></i>
+          <span id="toggle-label">{% if event.attendance_window_open %}Close Scanning{% else %}Open Scanning{% endif %}</span>
+        </button>
+
+        {% if flagged_count %}
+        <a href="{% url 'attendance:flagged_scans' event.id %}"
+           class="mt-3 w-full py-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 text-amber-400 font-bold text-sm flex items-center justify-center space-x-2 hover:bg-amber-500/20 transition">
+          <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+          <span>Review {{ flagged_count }} Flagged Scan{{ flagged_count|pluralize }}</span>
+        </a>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+  {# Instruction note #}
+  <p class="mt-6 text-slate-600 text-xs text-center max-w-xs">
+    Show this screen to participants or project it. They scan with their CertiFlow app.
+  </p>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const EVENT_ID     = "{{ event.id }}";
+const CSRF         = "{{ csrf_token }}";
+const TOKEN_URL    = "{% url 'attendance:room_qr_token' event.id %}";
+const TOGGLE_URL   = "{% url 'events:toggle_attendance_window' event.id %}";
+const INTERVAL     = {{ event.qr_roll_interval }};
+
+let windowOpen     = {{ event.attendance_window_open|yesno:"true,false" }};
+let timerInterval  = null;
+let refreshTimeout = null;
+
+const qrImage    = document.getElementById('qr-image');
+const qrLoading  = document.getElementById('qr-loading');
+const qrShimmer  = document.getElementById('qr-shimmer');
+const timerRing  = document.getElementById('timer-ring');
+const timerSecs  = document.getElementById('timer-seconds');
+
+async function refreshQR() {
+  // Flash shimmer
+  qrShimmer.classList.remove('hidden');
+  try {
+    const res  = await fetch(TOKEN_URL);
+    const data = await res.json();
+    if (!data.success) return;
+
+    qrImage.src = data.qr_image;
+    qrImage.classList.remove('hidden');
+    qrLoading.classList.add('hidden');
+
+    document.getElementById('stat-scanned').textContent = data.scan_count;
+    document.getElementById('stat-flagged').textContent  = data.flagged_count;
+
+    // Schedule next refresh
+    clearTimeout(refreshTimeout);
+    refreshTimeout = setTimeout(refreshQR, data.seconds_left * 1000);
+
+    // Countdown timer
+    startCountdown(data.seconds_left, INTERVAL);
+
+  } catch(e) {
+    console.error('QR refresh error:', e);
+  } finally {
+    setTimeout(() => qrShimmer.classList.add('hidden'), 200);
+  }
+}
+
+function startCountdown(secsLeft, total) {
+  clearInterval(timerInterval);
+  let s = secsLeft;
+  const circumference = 2 * Math.PI * 15.9;
+  const update = () => {
+    timerSecs.textContent = s;
+    const pct = (s / total) * circumference;
+    timerRing.style.strokeDasharray = `${pct} ${circumference}`;
+    if (s <= 5) timerRing.style.stroke = '#f59e0b';
+    else        timerRing.style.stroke = '#6366f1';
+    if (s > 0) s--;
+  };
+  update();
+  timerInterval = setInterval(update, 1000);
+}
+
+async function toggleWindow() {
+  const btn = document.getElementById('toggle-btn');
+  btn.disabled = true;
+  try {
+    const res  = await fetch(TOGGLE_URL, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF },
+    });
+    const data = await res.json();
+    if (!data.success) { alert(data.error); return; }
+
+    windowOpen = data.window_open;
+
+    const statusEl = document.getElementById('window-status');
+    const iconEl   = document.getElementById('toggle-icon');
+    const labelEl  = document.getElementById('toggle-label');
+
+    if (windowOpen) {
+      statusEl.className = 'mb-6 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+      statusEl.textContent = '● Scanning Open';
+      btn.className = btn.className.replace(/bg-indigo-600[^\s]*/g, 'bg-red-600/20')
+                                    .replace(/text-white/g, 'text-red-400')
+                                    .replace(/shadow[^\s]*/g, '');
+      iconEl.setAttribute('data-lucide', 'pause-circle');
+      labelEl.textContent = 'Close Scanning';
+    } else {
+      statusEl.className = 'mb-6 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest bg-red-500/20 text-red-400 border border-red-500/30';
+      statusEl.textContent = '○ Scanning Closed';
+      iconEl.setAttribute('data-lucide', 'play-circle');
+      labelEl.textContent = 'Open Scanning';
+    }
+    lucide.createIcons();
+  } catch(e) {
+    alert('Network error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', refreshQR);
+</script>
+{% endblock %}

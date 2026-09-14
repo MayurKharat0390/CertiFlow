@@ -31,6 +31,18 @@ class Event(models.Model):
         SOCIAL = 'social', _('Social Event')
         OTHER = 'other', _('Other')
 
+    class AttendanceMode(models.TextChoices):
+        VOLUNTEER_SCANS = 'volunteer_scans', _('Volunteer Scans Participant QR')
+        PARTICIPANT_SCANS = 'participant_scans', _('Participant Scans Event QR')
+
+    class QRRollInterval(models.IntegerChoices):
+        SECONDS_30  = 30,  _('30 seconds')
+        SECONDS_60  = 60,  _('1 minute')
+        SECONDS_90  = 90,  _('1.5 minutes')
+        SECONDS_120 = 120, _('2 minutes')
+        SECONDS_180 = 180, _('3 minutes')
+        SECONDS_300 = 300, _('5 minutes')
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='events')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_events')
@@ -71,6 +83,29 @@ class Event(models.Model):
 
     status = models.CharField(max_length=30, choices=Status.choices, default=Status.DRAFT)
     is_featured = models.BooleanField(default=False)
+
+    # Attendance Configuration
+    attendance_mode = models.CharField(
+        max_length=30,
+        choices=AttendanceMode.choices,
+        default=AttendanceMode.VOLUNTEER_SCANS,
+        help_text='How attendance is taken at this event'
+    )
+    qr_roll_interval = models.PositiveIntegerField(
+        choices=QRRollInterval.choices,
+        default=QRRollInterval.SECONDS_60,
+        help_text='How often the event QR refreshes in Mode B (seconds)'
+    )
+    attendance_window_open = models.BooleanField(
+        default=False,
+        help_text='Mode B: Whether participants can currently scan the event QR'
+    )
+
+    # Registration Configuration
+    registration_form_enabled = models.BooleanField(
+        default=False,
+        help_text='Whether a custom registration form has been built for this event'
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -148,3 +183,27 @@ class EventManager(models.Model):
 
     def __str__(self):
         return f'{self.user.get_full_name()} manages {self.event.title}'
+
+
+class EventVolunteer(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'pending', _('Pending Approval')
+        APPROVED = 'approved', _('Approved')
+        REJECTED = 'rejected', _('Rejected')
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='event_volunteers')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='volunteered_events')
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    assigned_at = models.DateTimeField(auto_now_add=True)
+    approved_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='approved_volunteers'
+    )
+
+    class Meta:
+        unique_together = ('event', 'user')
+
+    def __str__(self):
+        return f'{self.user.get_full_name()} - volunteer for {self.event.title} ({self.status})'
+

@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Scan Attendance — {{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col items-center justify-center px-4 py-12">
+
+  {# Background glow #}
+  <div class="absolute top-1/3 left-1/2 -translate-x-1/2 w-72 h-72 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+  <div class="w-full max-w-sm">
+
+    {# ── Event header ──────────────────────────────────────── #}
+    <div class="text-center mb-8">
+      <div class="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center mx-auto mb-4">
+        <i data-lucide="scan-line" class="w-8 h-8 text-indigo-400"></i>
+      </div>
+      <h1 class="text-2xl font-black text-white font-heading">Mark Your Attendance</h1>
+      <p class="text-slate-400 text-sm mt-1">{{ event.title }}</p>
+    </div>
+
+    {# ── Registration info ─────────────────────────────────── #}
+    <div class="glass-card rounded-3xl p-6 mb-6 border-white/5">
+      <div class="flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-lg flex-shrink-0">
+          {{ registration.user.first_name.0|upper }}{{ registration.user.last_name.0|upper }}
+        </div>
+        <div>
+          <p class="text-white font-bold">{{ registration.user.get_full_name }}</p>
+          <p class="text-indigo-400 text-xs font-mono">{{ registration.participant_id }}</p>
+        </div>
+      </div>
+    </div>
+
+    {# ── Error state ───────────────────────────────────────── #}
+    {% if error %}
+    <div class="glass-card rounded-3xl p-6 mb-6 border-red-500/20 bg-red-500/5 text-center">
+      <i data-lucide="alert-circle" class="w-10 h-10 text-red-400 mx-auto mb-3"></i>
+      <h2 class="text-white font-bold mb-1">QR Code Expired</h2>
+      <p class="text-slate-400 text-sm">{{ error }}</p>
+      <p class="text-slate-500 text-xs mt-3">Please scan the current QR code shown on the event screen.</p>
+    </div>
+
+    {# ── Already attended ──────────────────────────────────── #}
+    {% elif already_attended %}
+    <div class="glass-card rounded-3xl p-8 mb-6 border-emerald-500/20 bg-emerald-500/5 text-center">
+      <div class="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
+        <i data-lucide="check-circle-2" class="w-9 h-9 text-emerald-400"></i>
+      </div>
+      <h2 class="text-white font-black text-xl mb-1">Already Checked In!</h2>
+      <p class="text-slate-400 text-sm">Your attendance for this session is already recorded.</p>
+    </div>
+
+    {# ── Confirm attendance ────────────────────────────────── #}
+    {% else %}
+    <div class="glass-card rounded-3xl p-8 mb-6 border-white/5 text-center" id="confirm-card">
+      <div class="w-16 h-16 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center mx-auto mb-4">
+        <i data-lucide="fingerprint" class="w-8 h-8 text-indigo-400"></i>
+      </div>
+      <h2 class="text-white font-black text-xl mb-2">Confirm Your Presence</h2>
+      <p class="text-slate-400 text-sm mb-6">
+        Tap the button below to mark yourself as attended.<br>
+        This can only be done for <span class="text-white font-bold">your own account</span>.
+      </p>
+
+      {# Hidden fields for submission #}
+      <input type="hidden" id="scan-token" value="{{ token }}">
+
+      <button id="confirm-btn"
+              onclick="confirmAttendance()"
+              class="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-lg shadow-lg shadow-indigo-900/40 transition-all active:scale-95 flex items-center justify-center space-x-3">
+        <i data-lucide="user-check" class="w-6 h-6"></i>
+        <span>Mark Me Attended</span>
+      </button>
+
+      <p class="text-slate-600 text-xs mt-4">
+        {{ event.start_datetime|date:"d M Y · H:i" }}
+        {% if event.venue_name %}&middot; {{ event.venue_name }}{% endif %}
+      </p>
+    </div>
+
+    {# Success state (shown after JS confirms) #}
+    <div id="success-card" class="glass-card rounded-3xl p-8 mb-6 border-emerald-500/20 bg-emerald-500/5 text-center hidden">
+      <div class="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
+        <i data-lucide="badge-check" class="w-9 h-9 text-emerald-400"></i>
+      </div>
+      <h2 class="text-emerald-400 font-black text-2xl mb-1">You're In! 🎉</h2>
+      <p class="text-slate-300 text-sm font-medium mb-1">Attendance recorded</p>
+      <p id="success-id" class="text-slate-500 font-mono text-xs"></p>
+    </div>
+    {% endif %}
+
+    {# Navigation #}
+    <a href="{% url 'attendance:participant_pass' event.id %}"
+       class="block w-full text-center py-3 text-slate-500 font-bold text-sm hover:text-white transition-colors">
+      View My Pass →
+    </a>
+
+  </div>
+</div>
+
+<canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50 w-full h-full hidden"></canvas>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+<script>
+const CSRF       = "{{ csrf_token }}";
+const SCAN_URL   = "{% url 'attendance:process_participant_scan' %}";
+const EVENT_ID   = "{{ event.id }}";
+
+async function confirmAttendance() {
+  const btn   = document.getElementById('confirm-btn');
+  const token = document.getElementById('scan-token').value;
+
+  btn.disabled = true;
+  btn.innerHTML = `<div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>`;
+
+  try {
+    const res  = await fetch(SCAN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ token, event_id: EVENT_ID }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      // Show success
+      document.getElementById('confirm-card').classList.add('hidden');
+      const successCard = document.getElementById('success-card');
+      successCard.classList.remove('hidden');
+      document.getElementById('success-id').textContent = data.participant_id;
+
+      // Confetti
+      const canvas = document.getElementById('confetti-canvas');
+      canvas.classList.remove('hidden');
+      const myConfetti = confetti.create(canvas, { resize: true });
+      myConfetti({ particleCount: 120, spread: 80, origin: { y: 0.6 },
+                   colors: ['#6366f1','#a855f7','#10b981','#ffffff'] });
+      setTimeout(() => canvas.classList.add('hidden'), 4000);
+    } else {
+      alert(data.error || 'Could not mark attendance. Please try again.');
+      btn.disabled = false;
+      btn.innerHTML = `<i data-lucide="user-check" class="w-6 h-6"></i><span>Mark Me Attended</span>`;
+      lucide.createIcons();
+    }
+  } catch(e) {
+    alert('Network error. Please check your connection and try again.');
+    btn.disabled = false;
+    btn.innerHTML = `<i data-lucide="user-check" class="w-6 h-6"></i><span>Mark Me Attended</span>`;
+    lucide.createIcons();
+  }
+}
+</script>
+{% endblock %}

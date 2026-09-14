@@ -23,32 +23,65 @@
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
             <!-- Left Column: Certificate Preview (Visual) -->
             <div class="lg:col-span-3 space-y-6">
-                <div class="bg-white p-2 rounded-[2rem] shadow-2xl shadow-indigo-100 border border-indigo-50 relative group overflow-hidden">
+                <div class="bg-white dark:bg-slate-900 p-3 rounded-[2rem] shadow-2xl shadow-indigo-100 dark:shadow-none border border-indigo-50 dark:border-white/10 relative group overflow-hidden">
                     {% if certificate.pdf_file %}
-                    <div class="aspect-[1.414/1] bg-slate-100 rounded-[1.5rem] overflow-hidden relative">
-                        <iframe src="{{ certificate.pdf_file.url }}#toolbar=0&navpanes=0&scrollbar=0" class="w-full h-full border-none pointer-events-none"></iframe>
-                        <div class="absolute inset-0 bg-indigo-900/5 group-hover:bg-transparent transition-all"></div>
+                    <div class="aspect-[1.414/1] bg-slate-100 dark:bg-slate-800 rounded-[1.5rem] overflow-hidden relative flex items-center justify-center">
+                        <img 
+                            src="{% url 'verify:certificate_image' certificate.certificate_id %}?dpi=180" 
+                            alt="Certificate Preview" 
+                            class="w-full h-full object-contain rounded-[1.5rem] select-none transition-transform duration-300 group-hover:scale-[1.01]"
+                            loading="lazy"
+                        >
+                        <!-- Full Resolution Zoom Hint -->
+                        <a 
+                            href="{% url 'verify:certificate_image' certificate.certificate_id %}?dpi=300" 
+                            target="_blank" 
+                            class="absolute bottom-4 right-4 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1.5 rounded-xl border border-white/10 transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1.5"
+                        >
+                            <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i> Full Size
+                        </a>
                     </div>
                     {% else %}
-                    <div class="aspect-[1.414/1] bg-slate-100 rounded-[1.5rem] flex items-center justify-center">
+                    <div class="aspect-[1.414/1] bg-slate-100 dark:bg-slate-800 rounded-[1.5rem] flex items-center justify-center">
                         <i data-lucide="image" class="w-12 h-12 text-slate-300"></i>
                     </div>
                     {% endif %}
                     
                     <!-- Floating Verified Tag -->
-                    <div class="absolute top-6 right-6 bg-white/90 backdrop-blur px-4 py-2 rounded-full shadow-lg border border-green-100 flex items-center space-x-2 animate-bounce-slow">
+                    <div class="absolute top-6 right-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur px-4 py-2 rounded-full shadow-lg border border-green-100 dark:border-green-500/20 flex items-center space-x-2 animate-bounce-slow">
                         <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span class="text-[10px] font-black text-green-600 uppercase tracking-tighter">Authentic</span>
+                        <span class="text-[10px] font-black text-green-600 dark:text-green-400 uppercase tracking-tighter">Authentic</span>
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
-                <div class="grid grid-cols-2 gap-4">
-                    <a href="{{ certificate.pdf_file.url }}" download class="flex items-center justify-center py-4 bg-white border border-slate-200 rounded-2xl text-slate-700 text-sm font-bold shadow-sm hover:border-indigo-400 hover:text-indigo-600 transition-all">
-                        <i data-lucide="download" class="w-4 h-4 mr-2"></i> Download PDF
-                    </a>
-                    <button onclick="window.print()" class="flex items-center justify-center py-4 bg-white border border-slate-200 rounded-2xl text-slate-700 text-sm font-bold shadow-sm hover:border-indigo-400 hover:text-indigo-600 transition-all">
-                        <i data-lucide="printer" class="w-4 h-4 mr-2"></i> Print Proof
+                <!-- Action Buttons: Dual Format Downloads + Share -->
+                <div class="space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- High-Res PNG Download (For Socials, WhatsApp, Stories) -->
+                        <a 
+                            href="{% url 'verify:certificate_image' certificate.certificate_id %}?download=1" 
+                            class="flex items-center justify-center py-3.5 px-4 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white rounded-2xl text-xs font-bold shadow-lg shadow-indigo-200 dark:shadow-none transition-all gap-2 text-center"
+                        >
+                            <i data-lucide="image" class="w-4 h-4"></i> Download Image (300 DPI)
+                        </a>
+
+                        <!-- Vector PDF Download (For Official Documents & Print) -->
+                        <a 
+                            href="{{ certificate.pdf_file.url }}" 
+                            download 
+                            class="flex items-center justify-center py-3.5 px-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl text-slate-700 dark:text-slate-200 text-xs font-bold shadow-sm hover:border-indigo-400 hover:text-indigo-600 transition-all gap-2 text-center"
+                        >
+                            <i data-lucide="file-text" class="w-4 h-4"></i> Download Vector PDF
+                        </a>
+                    </div>
+
+                    <!-- Share Link Button -->
+                    <button 
+                        type="button" 
+                        onclick="window.copyToClipboard(window.location.href, this, 'Link Copied!')" 
+                        class="w-full flex items-center justify-center py-3 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all cursor-pointer gap-2"
+                    >
+                        <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Copy Public Verification Link
                     </button>
                 </div>
             </div>
@@ -102,12 +135,13 @@
                     <a href="{{ linkedin_url }}&name={{ event.title|urlencode }}&organizationName={{ event.organization.name|urlencode }}&issueYear={{ certificate.issue_date|date:'Y' }}&issueMonth={{ certificate.issue_date|date:'m' }}&certId={{ certificate.certificate_id|urlencode }}&certUrl={{ request.build_absolute_uri|urlencode }}" 
                        target="_blank"
                        class="flex items-center justify-center w-full py-4 bg-[#0A66C2] text-white rounded-2xl text-sm font-bold hover:bg-[#004182] transition-colors shadow-lg shadow-blue-100">
-                        <i class="fab fa-linkedin mr-2 text-lg"></i> Add to LinkedIn Profile
+                        <svg class="w-4 h-4 mr-2 fill-current" viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
+                        Add to LinkedIn Profile
                     </a>
                     {% endwith %}
 
                     <p class="text-[10px] text-slate-400 text-center leading-relaxed px-4">
-                        By clicking above, this credential will be added to your LinkedIn Certifications section.
+                        Click above to attach this verified digital credential directly to your LinkedIn Certifications section.
                     </p>
                 </div>
             </div>

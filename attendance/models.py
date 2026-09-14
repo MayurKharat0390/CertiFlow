@@ -60,12 +60,75 @@ class ScanLog(models.Model):
     # Device/Location info
     device_info = models.TextField(blank=True)
     location_data = models.JSONField(null=True, blank=True)
-    
+
     # Verification token used for this scan
     token_used = models.TextField(blank=True)
+
+    # Action performed after scan (Mode A volunteer scanner)
+    action_performed = models.CharField(
+        max_length=50, blank=True,
+        help_text='e.g. mark_attended, mark_absent, issued_cert, verify_only'
+    )
+
+    # Anti-cheat flagging (Mode B participant scans)
+    is_flagged = models.BooleanField(default=False)
+    scan_flag = models.CharField(
+        max_length=50, blank=True,
+        help_text='geo_anomaly | suspicious_burst | device_sharing | ghost_account'
+    )
+    flag_reviewed = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['-scan_time']
 
     def __str__(self):
         return f'{self.scan_type} at {self.scan_time}'
+
+
+class ParticipantScanRecord(models.Model):
+    """
+    Tracks Mode B attendance: participant scans the event's rolling QR.
+    Each record represents one participant's scan attempt, including
+    anti-cheat metadata for the organizer's review panel.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    registration = models.ForeignKey(
+        Registration, on_delete=models.CASCADE,
+        related_name='self_scan_records'
+    )
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE,
+        related_name='participant_scan_records'
+    )
+    scan_time = models.DateTimeField(default=timezone.now)
+
+    # The QR window number that was scanned
+    window_number = models.PositiveIntegerField()
+
+    # Whether this scan was accepted and attendance marked
+    is_accepted = models.BooleanField(default=True)
+    rejection_reason = models.CharField(max_length=100, blank=True)
+
+    # Anti-cheat metadata
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    device_fingerprint = models.CharField(max_length=255, blank=True)
+    is_flagged = models.BooleanField(default=False)
+    scan_flag = models.CharField(
+        max_length=50, blank=True,
+        help_text='geo_anomaly | suspicious_burst | device_sharing | ghost_account'
+    )
+    flag_reviewed = models.BooleanField(default=False)
+    flag_notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-scan_time']
+        indexes = [
+            models.Index(fields=['event', 'window_number']),
+            models.Index(fields=['registration', 'window_number']),
+            models.Index(fields=['is_flagged', 'flag_reviewed']),
+        ]
+
+    def __str__(self):
+        status = 'ACCEPTED' if self.is_accepted else 'REJECTED'
+        flag = f' [{self.scan_flag}]' if self.is_flagged else ''
+        return f'{self.registration.user.get_full_name()} - {status}{flag}'

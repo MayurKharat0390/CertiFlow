@@ -6,7 +6,7 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
         <!-- Decorative background glow -->
-        <div class="absolute -top-20 -left-20 -z-10 w-96 h-96 bg-indigo-600/10 rounded-full blur-[100px]"></div>
+        <div class="absolute -top-20 -left-20 -z-10 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl"></div>
 
         <!-- Left: Configuration & Controls (4/12) -->
         <div class="lg:col-span-4 space-y-6">
@@ -20,7 +20,7 @@
                     
                     {% if form.errors %}
                     <div class="p-4 mb-4 bg-red-500/10 border-l-4 border-red-500 text-red-400 rounded-xl text-xs font-bold">
-                        <p class="mb-1">Protocol Violation:</p>
+                        <p class="mb-1">Validation Errors:</p>
                         <ul class="list-disc list-inside">
                             {% for field, errors in form.errors.items %}
                                 {% for error in errors %}
@@ -34,16 +34,16 @@
                     <!-- Basic Info -->
                     <div class="space-y-6">
                         <div>
-                            <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Template Identity</label>
+                            <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Template Name</label>
                             {{ form.name }}
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Event Matrix</label>
+                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Associated Event</label>
                                 {{ form.event }}
                             </div>
                             <div>
-                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Tier</label>
+                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Recipient Category</label>
                                 {{ form.category }}
                             </div>
                         </div>
@@ -51,20 +51,32 @@
 
                     <!-- Background Upload -->
                     <div class="space-y-3">
-                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Background Architecture</label>
+                        <div class="flex items-center justify-between">
+                            <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Certificate Background Canvas</label>
+                            <span id="canvas-dpi-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Optimal: 1920x1080+</span>
+                        </div>
                         <div class="relative group border-2 border-dashed border-white/10 rounded-[1.5rem] p-6 hover:border-indigo-500/50 transition-all bg-white/5">
                             <div class="flex flex-col items-center justify-center space-y-2">
                                 <i data-lucide="image" class="h-6 w-6 text-indigo-400"></i>
-                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Upload Landscape PNG/JPG</span>
+                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center" id="upload-label">
+                                    Upload High-Res Canvas (A4 Landscape or Portrait PNG/JPG)
+                                </span>
+                                <span class="text-[9px] text-slate-500 text-center font-medium">
+                                    Recommend: 2480x3508px (A4 Print 300 DPI) or 1920x1080px (Full HD)
+                                </span>
                             </div>
                             <input id="id_background_image" name="background_image" type="file" class="absolute inset-0 opacity-0 cursor-pointer" accept="image/*">
+                        </div>
+                        <div id="resolution-warning" class="hidden p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] leading-relaxed flex items-start gap-2">
+                            <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0 mt-0.5"></i>
+                            <span id="resolution-warning-text">Uploaded image resolution is low. For razor-sharp certificates and prints, consider using an image with at least 1920x1080 pixels.</span>
                         </div>
                     </div>
 
                     <!-- Visual Field Controls -->
                     <div class="pt-8 border-t border-white/5 space-y-6">
                         <div class="flex items-center justify-between">
-                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Neural Field Editor</label>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Dynamic Certificate Fields</label>
                             <div class="flex space-x-2">
                                 <button type="button" onclick="addField()" class="btn-glass p-2 rounded-xl text-emerald-400 border-emerald-500/20" title="Add Field">
                                     <i data-lucide="plus" class="w-4 h-4"></i>
@@ -82,15 +94,21 @@
                         <div id="controls-panel" class="space-y-6 p-6 bg-black/20 rounded-[2rem] border border-white/5">
                             <!-- Field Type -->
                             <div>
-                                <span class="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3">Core Identity</span>
+                                <span class="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3">Field Content Type</span>
                                 <select id="input-type" class="w-full text-xs font-bold bg-white/5 border-white/10 rounded-xl text-white">
                                     <option value="participant_name">Participant Name</option>
                                     <option value="event_name">Event Name</option>
                                     <option value="cert_id">Credential ID</option>
                                     <option value="date">Issue Date</option>
-                                    <option value="qr_code">Verification QR</option>
-                                    <option value="custom">Custom Intel</option>
+                                    <option value="qr_code">Verification QR Code</option>
+                                    <option value="custom">Custom Text</option>
                                 </select>
+                            </div>
+
+                            <!-- Custom Text Input -->
+                            <div id="custom-text-container" class="hidden">
+                                <span class="block text-[10px] font-bold text-slate-500 uppercase mb-2">Custom Text Content</span>
+                                <input type="text" id="input-text" class="w-full text-xs font-bold bg-white/5 border-white/10 rounded-xl text-white py-3 px-4" placeholder="e.g. Winner, 1st Place, Keynote Speaker">
                             </div>
 
                             <!-- X Position -->
@@ -151,7 +169,7 @@
 
                     <!-- Hidden JSON Field -->
                     <div class="hidden">
-                        <textarea name="layout_config" id="id_layout_config">{{ form.layout_config.value|default:'{}' }}</textarea>
+                        <textarea name="layout_config" id="id_layout_config">{{ layout_config_json|default:'{}' }}</textarea>
                     </div>
                     
                     <div class="pt-6 border-t border-gray-100 flex items-center justify-end space-x-4">
@@ -169,14 +187,14 @@
             <div class="bg-gray-900 rounded-[2.5rem] shadow-2xl p-8 border-[12px] border-gray-800 sticky top-8">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-lg font-bold text-white font-heading flex items-center">
-                        <i data-lucide="eye" class="w-5 h-5 mr-2 text-indigo-400"></i> Real-time Design Preview
+                        <i data-lucide="eye" class="w-5 h-5 mr-2 text-indigo-400"></i> Live Certificate Preview
                     </h3>
                     <div class="flex items-center space-x-3">
-                        <span class="px-3 py-1 bg-green-500/10 text-green-400 rounded-full text-[10px] font-bold uppercase tracking-widest border border-green-500/20">WYSIWYG Mode</span>
+                        <span class="px-3 py-1 bg-green-500/10 text-green-400 rounded-full text-[10px] font-bold uppercase tracking-widest border border-green-500/20">Live WYSIWYG</span>
                     </div>
                 </div>
                 
-                <div class="relative bg-black/40 rounded-2xl overflow-hidden aspect-[1.414/1] flex items-center justify-center border border-white/5 group">
+                <div id="preview-container" class="relative bg-black/40 rounded-2xl overflow-hidden flex items-center justify-center border border-white/5 group" style="aspect-ratio: 1.414; max-height: 70vh; width: 100%;">
                     <canvas id="preview-canvas" class="max-w-full max-h-full shadow-2xl transition-transform duration-500 group-hover:scale-[1.01]"></canvas>
                     <div id="no-preview" class="absolute inset-0 flex flex-col items-center justify-center text-gray-500">
                         <i data-lucide="image" class="w-16 h-16 mb-4 opacity-20"></i>
@@ -186,12 +204,12 @@
 
                 <div class="mt-8 p-6 bg-white/5 rounded-3xl border border-white/5 flex items-center justify-between">
                     <div>
-                        <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Current coordinates</p>
+                        <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Field Coordinates</p>
                         <p class="text-xl font-mono font-bold text-indigo-300" id="live-coords">X: 500 | Y: 500</p>
                     </div>
                     <div class="text-right">
                         <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">PDF Resolution</p>
-                        <p class="text-sm text-gray-400">A4 Landscape (300 DPI Output)</p>
+                        <p id="resolution-text" class="text-sm text-gray-400">A4 Landscape (300 DPI Output)</p>
                     </div>
                 </div>
             </div>
@@ -215,6 +233,8 @@
     const inputAlign = document.getElementById('input-align');
     const inputFont = document.getElementById('input-font');
     const inputType = document.getElementById('input-type');
+    const inputText = document.getElementById('input-text');
+    const customTextContainer = document.getElementById('custom-text-container');
     
     const valX = document.getElementById('val-x');
     const valY = document.getElementById('val-y');
@@ -230,8 +250,13 @@
         
         // Load initial JSON
         try {
-            config = JSON.parse(jsonInput.value || '{"fields":[]}');
-            if (config.fields.length === 0) {
+            let jsonString = jsonInput.value || '{"fields":[]}';
+            // Auto-convert Python dict string representation (single quotes) to valid JSON (double quotes)
+            if (jsonString.includes("{'") || jsonString.includes("'fields'")) {
+                jsonString = jsonString.replace(/'/g, '"');
+            }
+            config = JSON.parse(jsonString);
+            if (!config.fields || config.fields.length === 0) {
                 config.fields = [
                     { type: 'participant_name', x: 500, y: 500, font: 'Helvetica-Bold', size: 48, align: 'center', color: '#1e1b4b' }
                 ];
@@ -247,6 +272,7 @@
         const img = new Image();
         img.onload = () => {
             backgroundImage = img;
+            updateOrientation(img);
             draw();
         };
         img.src = "{{ template.background_image.url }}";
@@ -281,6 +307,14 @@
         inputAlign.value = field.align || 'center';
         inputFont.value = field.font || 'Helvetica';
         inputType.value = field.type || 'participant_name';
+
+        // Toggle custom text field visibility
+        if (field.type === 'custom') {
+            customTextContainer.classList.remove('hidden');
+            inputText.value = field.text || '';
+        } else {
+            customTextContainer.classList.add('hidden');
+        }
 
         valX.innerText = field.x;
         valY.innerText = field.y;
@@ -400,19 +434,70 @@
             field.font = inputFont.value;
             field.type = inputType.value;
             populateSelector(); // Update name in selector if type changed
+            updateControlsFromSelected(); // Update visibility of custom text input
             updateJson();
             draw();
         });
     });
 
+    inputText.addEventListener('input', () => {
+        const field = config.fields[fieldSelector.value];
+        if (!field) return;
+        field.text = inputText.value;
+        updateJson();
+        draw();
+    });
+
+    function updateOrientation(img) {
+        const container = document.getElementById('preview-container');
+        const badge = document.getElementById('canvas-dpi-badge');
+        const warning = document.getElementById('resolution-warning');
+        const warningText = document.getElementById('resolution-warning-text');
+        
+        const isPortrait = img.height > img.width;
+        if (isPortrait) {
+            canvas.width = 707;
+            canvas.height = 1000;
+            container.style.aspectRatio = "0.707";
+            document.getElementById('resolution-text').innerText = "A4 Portrait (300 DPI Output)";
+        } else {
+            canvas.width = 1000;
+            canvas.height = 707;
+            container.style.aspectRatio = "1.414";
+            document.getElementById('resolution-text').innerText = "A4 Landscape (300 DPI Output)";
+        }
+
+        // Check Resolution Quality
+        if (badge) {
+            badge.innerText = `${img.naturalWidth || img.width} × ${img.naturalHeight || img.height} px`;
+            const longEdge = Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height);
+            if (longEdge >= 2400) {
+                badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                if (warning) warning.classList.add('hidden');
+            } else if (longEdge >= 1600) {
+                badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20";
+                if (warning) warning.classList.add('hidden');
+            } else {
+                badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20";
+                if (warning) {
+                    warning.classList.remove('hidden');
+                    warningText.innerText = `Uploaded canvas is ${img.naturalWidth || img.width}×${img.naturalHeight || img.height}px. For optimal sharpness when printed or exported, 1920×1080px or 2480×3508px is strongly recommended.`;
+                }
+            }
+        }
+    }
+
     fileInput.onchange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            const uploadLabel = document.getElementById('upload-label');
+            if (uploadLabel) uploadLabel.innerText = file.name;
             const reader = new FileReader();
             reader.onload = (event) => {
                 const img = new Image();
                 img.onload = () => {
                     backgroundImage = img;
+                    updateOrientation(img);
                     draw();
                 };
                 img.src = event.target.result;

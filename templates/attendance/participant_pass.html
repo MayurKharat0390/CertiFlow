@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}{{ registration.participant_id }} — {{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col items-center justify-center px-4 py-12">
+
+  {# ── Pass Card ──────────────────────────────────────────────────── #}
+  <div id="pass-card" class="w-full max-w-sm">
+    <div class="relative rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/10"
+         style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);">
+
+      {# Glow accents #}
+      <div class="absolute top-0 right-0 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute bottom-0 left-0 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+      {# Header strip #}
+      <div class="relative px-8 pt-8 pb-4 flex items-center justify-between">
+        <div>
+          <p class="text-[10px] font-black text-indigo-300/70 uppercase tracking-[0.25em]">{{ event.organization.name }}</p>
+          <h1 class="text-sm font-black text-white mt-0.5 leading-tight">{{ event.title }}</h1>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center">
+          <i data-lucide="award" class="w-5 h-5 text-indigo-300"></i>
+        </div>
+      </div>
+
+      {# Divider #}
+      <div class="mx-8 border-t border-white/5 mb-6"></div>
+
+      {# Participant info #}
+      <div class="px-8 flex items-center space-x-4 mb-6">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg font-black shadow-lg flex-shrink-0">
+          {{ registration.user.first_name.0|upper }}{{ registration.user.last_name.0|upper }}
+        </div>
+        <div>
+          <p class="text-white font-black text-lg leading-tight">{{ registration.user.get_full_name }}</p>
+          {% if registration.user.department %}
+          <p class="text-slate-400 text-xs font-medium mt-0.5">
+            {{ registration.user.department }}{% if registration.user.year_of_study %} &middot; {{ registration.user.year_of_study }} Year{% endif %}
+          </p>
+          {% endif %}
+          {% if registration.user.institution %}
+          <p class="text-slate-500 text-[10px] mt-0.5">{{ registration.user.institution }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      {# QR Code #}
+      <div class="px-8 mb-6">
+        <div class="bg-white rounded-3xl p-4 flex items-center justify-center">
+          <img src="{{ qr_data_uri }}" alt="Attendance QR" class="w-48 h-48 object-contain">
+        </div>
+      </div>
+
+      {# Participant ID & Status #}
+      <div class="px-8 mb-6 flex items-center justify-between">
+        <div>
+          <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Participant ID</p>
+          <p class="font-mono text-sm font-bold text-indigo-300">{{ registration.participant_id }}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Status</p>
+          {% if attendance and attendance.is_present %}
+            <span class="flex items-center text-emerald-400 text-xs font-black">
+              <span class="w-2 h-2 bg-emerald-400 rounded-full mr-1.5 animate-ping-slow"></span>CHECKED IN
+            </span>
+          {% else %}
+            <span class="flex items-center text-indigo-400 text-xs font-black">
+              <span class="w-2 h-2 bg-indigo-400 rounded-full mr-1.5"></span>REGISTERED
+            </span>
+          {% endif %}
+        </div>
+      </div>
+
+      {# Event date + venue strip #}
+      <div class="px-8 pb-8">
+        <div class="bg-white/5 rounded-2xl px-5 py-3 flex items-center justify-between border border-white/5">
+          <div class="flex items-center text-slate-400 text-xs">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 mr-1.5 text-indigo-400"></i>
+            {{ event.start_datetime|date:"d M Y" }}
+          </div>
+          <div class="w-px h-4 bg-white/10"></div>
+          <div class="flex items-center text-slate-400 text-xs">
+            <i data-lucide="clock" class="w-3.5 h-3.5 mr-1.5 text-indigo-400"></i>
+            {{ event.start_datetime|date:"H:i" }}
+          </div>
+          <div class="w-px h-4 bg-white/10"></div>
+          <div class="flex items-center text-slate-400 text-xs">
+            <i data-lucide="map-pin" class="w-3.5 h-3.5 mr-1.5 text-indigo-400"></i>
+            {{ event.venue_name|default:"Online"|truncatechars:12 }}
+          </div>
+        </div>
+      </div>
+
+    </div>{# /pass-card inner #}
+  </div>{# /pass-card #}
+
+  {# ── Action Buttons ──────────────────────────────────────────── #}
+  <div class="mt-6 w-full max-w-sm flex flex-col space-y-3">
+
+    {% if event.attendance_mode == 'participant_scans' and event.attendance_window_open and not attendance.is_present %}
+    <div class="bg-indigo-600/10 border border-indigo-500/20 rounded-2xl p-4 text-center">
+      <p class="text-indigo-300 text-sm font-bold mb-3">📡 Scanning is OPEN — scan the event QR now</p>
+      <a href="{% url 'registrations:public_list' %}" class="text-xs text-slate-500">Go to Events</a>
+    </div>
+    {% endif %}
+
+    <button onclick="downloadPass()"
+            class="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold text-sm hover:bg-white/10 transition-all flex items-center justify-center space-x-2">
+      <i data-lucide="download" class="w-4 h-4"></i>
+      <span>Download Pass</span>
+    </button>
+
+    <a href="{% url 'events:dashboard' %}"
+       class="w-full py-4 text-center text-slate-500 font-bold text-sm hover:text-white transition-colors">
+      ← Back to Dashboard
+    </a>
+  </div>
+
+</div>
+
+{# ── Confetti on first load ───────────────────────────────────── #}
+{% if not attendance %}
+<canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50 w-full h-full"></canvas>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script>
+  // Fire confetti on first visit (just registered)
+  {% if not attendance %}
+  const canvas = document.getElementById('confetti-canvas');
+  const myConfetti = confetti.create(canvas, { resize: true, useWorker: true });
+  setTimeout(() => {
+    myConfetti({ particleCount: 180, spread: 100, origin: { y: 0.5 }, colors: ['#6366f1','#a855f7','#ec4899','#ffffff'] });
+  }, 400);
+  setTimeout(() => canvas.remove(), 5000);
+  {% endif %}
+
+  async function downloadPass() {
+    const card = document.getElementById('pass-card');
+    try {
+      const canvas = await html2canvas(card, { backgroundColor: null, scale: 3, useCORS: true });
+      const link = document.createElement('a');
+      link.download = '{{ registration.participant_id }}-pass.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch(e) {
+      alert('Could not download — try a screenshot instead.');
+    }
+  }
+</script>
+{% endblock %}

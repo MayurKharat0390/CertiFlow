@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from .models import CertificateTemplate, Certificate
 from .forms import CertificateTemplateForm
@@ -77,6 +78,7 @@ def issue_bulk_certificates(request, event_id):
 
 @login_required
 def template_create(request):
+    import json
     if request.method == 'POST':
         form = CertificateTemplateForm(request.POST, request.FILES)
         if form.is_valid():
@@ -92,11 +94,13 @@ def template_create(request):
     return render(request, 'certificates/template_form.html', {
         'form': form,
         'title': 'Create Certificate Template',
-        'default_json': default_json
+        'default_json': default_json,
+        'layout_config_json': default_json
     })
 
 @login_required
 def template_update(request, pk):
+    import json
     template = get_object_or_404(CertificateTemplate, id=pk)
     if request.method == 'POST':
         form = CertificateTemplateForm(request.POST, request.FILES, instance=template)
@@ -106,9 +110,21 @@ def template_update(request, pk):
             return redirect('certificates:certificate_list')
     else:
         form = CertificateTemplateForm(instance=template)
+        
+    layout_config_json = json.dumps(template.layout_config)
     
     return render(request, 'certificates/template_form.html', {
         'form': form,
         'title': 'Edit Certificate Template',
-        'template': template
+        'template': template,
+        'layout_config_json': layout_config_json
     })
+
+@login_required
+@require_http_methods(["POST"])
+def template_delete(request, pk):
+    template = get_object_or_404(CertificateTemplate, id=pk)
+    name = template.name
+    template.delete()
+    messages.success(request, f"Template '{name}' deleted successfully!")
+    return redirect('certificates:certificate_list')

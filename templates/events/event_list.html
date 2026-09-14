@@ -1,104 +1,237 @@
 {% extends "base.html" %}
 
-{% block title %}Events{% endblock %}
+{% block title %}Events Directory | CertiFlow{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-    <div class="md:flex md:items-center md:justify-between mb-12">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Breadcrumb & Header -->
+    <nav class="flex mb-6" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2 bg-white/5 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/5 text-xs">
+            <li>
+                <a href="{% url 'events:dashboard' %}" class="text-slate-400 hover:text-white transition-colors flex items-center gap-1">
+                    <i data-lucide="home" class="w-3.5 h-3.5"></i> Hub
+                </a>
+            </li>
+            <li><i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-600"></i></li>
+            <li>
+                <span class="text-indigo-400 font-bold">Events Directory</span>
+            </li>
+        </ol>
+    </nav>
+
+    <div class="md:flex md:items-center md:justify-between mb-8">
         <div class="flex-1 min-w-0">
-            <h1 class="text-4xl font-black leading-tight text-white tracking-tight font-heading text-glow">
-                Event Pipeline
+            <h1 class="text-3xl sm:text-4xl font-black leading-tight text-white tracking-tight font-heading">
+                Events Directory
             </h1>
-            <p class="mt-2 text-slate-400 font-medium italic">Manage and track your institutional events</p>
+            <p class="mt-1 text-slate-400 text-sm font-medium">
+                Manage, track, and coordinate institutional events and automated certificate workflows
+            </p>
         </div>
-        <div class="mt-6 flex md:mt-0 md:ml-4">
-            <a href="{% url 'events:event_create' %}" class="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-2xl text-sm font-black shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 hover:-translate-y-0.5 transition-all">
-                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
-                Create Protocol
+        <div class="mt-4 flex md:mt-0 md:ml-4 items-center gap-3">
+            <a href="{% url 'registrations:public_list' %}" class="btn-glass px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
+                <i data-lucide="compass" class="w-3.5 h-3.5"></i> Public View
             </a>
+            {% if user.role != 'participant' %}
+            <a href="{% url 'events:event_create' %}" class="inline-flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-600/25 hover:-translate-y-0.5 transition-all">
+                <i data-lucide="plus" class="w-3.5 h-3.5 mr-1.5"></i> Create Event
+            </a>
+            {% endif %}
         </div>
     </div>
 
-    <!-- Filters & Search -->
-    <div class="glass-card p-6 rounded-[2.5rem] mb-12 flex flex-wrap gap-4 items-center border-white/5">
-        <div class="flex items-center space-x-2 bg-white/5 p-1 rounded-2xl border border-white/5">
-            <button class="px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20">All</button>
-            <button class="px-5 py-2 text-slate-400 hover:text-white rounded-xl text-xs font-bold uppercase tracking-widest transition-colors">Active</button>
-            <button class="px-5 py-2 text-slate-400 hover:text-white rounded-xl text-xs font-bold uppercase tracking-widest transition-colors">Past</button>
+    <!-- Filters & Search Toolbar -->
+    <div class="glass-card p-4 sm:p-5 rounded-2xl mb-8 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between border-white/5 shadow-sm">
+        <!-- Status Filter Pills -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+            <a href="{% url 'events:event_list' %}?status=all{% if search_query %}&search={{ search_query }}{% endif %}" 
+               class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap {% if current_status == 'all' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/20{% else %}bg-white/5 text-slate-400 hover:text-white hover:bg-white/10{% endif %}">
+                <span>All Events</span>
+                <span class="px-1.5 py-0.5 rounded-md text-[10px] {% if current_status == 'all' %}bg-white/20 text-white{% else %}bg-white/10 text-slate-400{% endif %}">{{ all_count }}</span>
+            </a>
+
+            <a href="{% url 'events:event_list' %}?status=published{% if search_query %}&search={{ search_query }}{% endif %}" 
+               class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap {% if current_status in 'published,active' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/20{% else %}bg-white/5 text-slate-400 hover:text-white hover:bg-white/10{% endif %}">
+                <span>Active</span>
+                <span class="px-1.5 py-0.5 rounded-md text-[10px] {% if current_status in 'published,active' %}bg-white/20 text-white{% else %}bg-white/10 text-slate-400{% endif %}">{{ active_count }}</span>
+            </a>
+
+            <a href="{% url 'events:event_list' %}?status=completed{% if search_query %}&search={{ search_query }}{% endif %}" 
+               class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap {% if current_status in 'completed,past' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/20{% else %}bg-white/5 text-slate-400 hover:text-white hover:bg-white/10{% endif %}">
+                <span>Past</span>
+                <span class="px-1.5 py-0.5 rounded-md text-[10px] {% if current_status in 'completed,past' %}bg-white/20 text-white{% else %}bg-white/10 text-slate-400{% endif %}">{{ past_count }}</span>
+            </a>
+
+            {% if draft_count > 0 %}
+            <a href="{% url 'events:event_list' %}?status=draft{% if search_query %}&search={{ search_query }}{% endif %}" 
+               class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap {% if current_status == 'draft' %}bg-indigo-600 text-white shadow-md shadow-indigo-600/20{% else %}bg-white/5 text-slate-400 hover:text-white hover:bg-white/10{% endif %}">
+                <span>Drafts</span>
+                <span class="px-1.5 py-0.5 rounded-md text-[10px] {% if current_status == 'draft' %}bg-white/20 text-white{% else %}bg-white/10 text-slate-400{% endif %}">{{ draft_count }}</span>
+            </a>
+            {% endif %}
         </div>
         
-        <div class="ml-auto relative w-full md:w-auto">
-            <input type="text" placeholder="Search event matrix..." class="w-full md:w-80 pl-12 pr-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-sm text-white focus:ring-indigo-500 focus:border-indigo-500 transition-all">
-            <i data-lucide="search" class="w-5 h-5 text-slate-500 absolute left-4 top-3.5"></i>
-        </div>
+        <!-- Search Input with Clear Button -->
+        <form method="GET" class="relative w-full md:w-80 flex items-center">
+            <input type="hidden" name="status" value="{{ current_status }}">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none"></i>
+            <input 
+                type="text" 
+                name="search" 
+                value="{{ search_query }}" 
+                placeholder="Search by title, venue, or host..." 
+                class="w-full pl-10 pr-9 py-2 text-xs bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+            >
+            {% if search_query %}
+            <a href="{% url 'events:event_list' %}?status={{ current_status }}" class="absolute right-3 text-slate-400 hover:text-white transition-colors" title="Clear search">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </a>
+            {% endif %}
+        </form>
     </div>
 
     <!-- Events Grid -->
-    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {% for event in events %}
-        <div class="glass-card rounded-[3rem] overflow-hidden group border-white/10">
-            <div class="aspect-w-16 aspect-h-9 relative h-52">
-                {% if event.banner_image %}
-                    <img src="{{ event.banner_image.url }}" alt="{{ event.title }}" class="object-cover w-full h-full opacity-60 group-hover:scale-110 group-hover:opacity-80 transition-all duration-700">
-                {% else %}
-                    <div class="w-full h-full bg-gradient-to-br from-indigo-900 to-slate-900 opacity-60 flex items-center justify-center text-indigo-400">
-                        <i data-lucide="calendar" class="w-16 h-16 opacity-20"></i>
+        <div class="glass-card rounded-2xl overflow-hidden group border border-white/10 flex flex-col justify-between hover:border-indigo-500/30 transition-all duration-300">
+            <div>
+                <!-- Event Banner -->
+                <div class="relative h-44 overflow-hidden bg-slate-900">
+                    {% if event.banner_image %}
+                        <img src="{{ event.banner_image.url }}" alt="{{ event.title }}" class="object-cover w-full h-full opacity-70 group-hover:scale-105 group-hover:opacity-90 transition-all duration-500">
+                    {% else %}
+                        <div class="w-full h-full bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 flex items-center justify-center">
+                            <i data-lucide="calendar" class="w-12 h-12 text-indigo-500/20"></i>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+                    
+                    <!-- Date Badge (Top Left) -->
+                    <div class="absolute top-4 left-4 bg-slate-950/80 backdrop-blur-md rounded-xl p-2 text-center border border-white/15 shadow-md">
+                        <span class="block text-xs font-black text-indigo-400 leading-none">{{ event.start_datetime|date:"M"|upper }}</span>
+                        <span class="block text-base font-black text-white leading-none mt-1">{{ event.start_datetime|date:"d" }}</span>
                     </div>
-                {% endif %}
-                
-                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent"></div>
-                
-                <div class="absolute top-6 left-6">
-                    <span class="px-3 py-1 bg-white/10 backdrop-blur-md rounded-lg text-[9px] font-black text-white uppercase tracking-widest border border-white/20">
-                        {{ event.get_event_type_display }}
-                    </span>
+
+                    <!-- Category & Status Badges (Top Right) -->
+                    <div class="absolute top-4 right-4 flex items-center gap-1.5">
+                        <span class="px-2.5 py-1 bg-white/10 backdrop-blur-md rounded-lg text-[9px] font-black text-white uppercase tracking-wider border border-white/20">
+                            {{ event.get_event_type_display }}
+                        </span>
+                        <span class="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider shadow-sm {% if event.status == 'published' %}bg-emerald-500 text-white{% elif event.status == 'draft' %}bg-amber-500 text-white{% else %}bg-slate-700 text-white{% endif %}">
+                            {{ event.get_status_display }}
+                        </span>
+                    </div>
+
+                    <!-- Bottom Venue Pill over image -->
+                    <div class="absolute bottom-3 left-4 right-4 flex items-center justify-between text-xs text-slate-300">
+                        <span class="flex items-center gap-1 truncate font-medium">
+                            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0"></i>
+                            <span class="truncate">{{ event.venue_name|default:"Online / Virtual" }}</span>
+                        </span>
+                        {% if event.is_online %}
+                        <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-md border border-emerald-500/30 flex items-center gap-0.5">
+                            <i data-lucide="globe" class="w-2.5 h-2.5"></i> Online
+                        </span>
+                        {% endif %}
+                    </div>
                 </div>
                 
-                <div class="absolute top-6 right-6">
-                    <span class="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest {% if event.status == 'published' %}bg-emerald-500 text-white shadow-lg shadow-emerald-500/20{% else %}bg-slate-700 text-white{% endif %}">
-                        {{ event.get_status_display }}
-                    </span>
+                <!-- Card Body -->
+                <div class="p-5 space-y-4">
+                    <h3 class="text-base font-bold text-white group-hover:text-indigo-400 transition-colors line-clamp-1 leading-snug">
+                        <a href="{% url 'events:event_detail' event.id %}">{{ event.title }}</a>
+                    </h3>
+                    
+                    <div class="flex items-center text-xs text-slate-400 font-medium">
+                        <i data-lucide="clock" class="w-3.5 h-3.5 text-indigo-400 mr-2 flex-shrink-0"></i>
+                        <span>{{ event.start_datetime|date:"l, M d, Y • g:i A" }}</span>
+                    </div>
+
+                    <!-- Capacity / Attendees Indicator -->
+                    <div class="pt-2">
+                        <div class="flex items-center justify-between text-xs mb-1.5">
+                            <span class="font-bold text-slate-300 flex items-center gap-1">
+                                <i data-lucide="users" class="w-3.5 h-3.5 text-indigo-400"></i>
+                                <span>{{ event.registered_count }} registered</span>
+                            </span>
+                            <span class="text-slate-400 text-[11px]">
+                                {% if event.max_capacity %}
+                                    Cap: {{ event.max_capacity }}
+                                {% else %}
+                                    Unlimited
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% if event.max_capacity %}
+                        <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                            <div class="h-full bg-indigo-500 rounded-full" style="width: {% widthratio event.registered_count event.max_capacity 100 %}%; max-width: 100%;"></div>
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
             
-            <div class="p-8">
-                <h3 class="text-xl font-bold text-white mb-4 group-hover:text-indigo-400 transition-colors line-clamp-1">{{ event.title }}</h3>
-                
-                <div class="space-y-3 mb-8">
-                    <div class="flex items-center text-sm text-slate-400 font-medium">
-                        <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center mr-3 border border-white/5">
-                            <i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i>
-                        </div>
-                        {{ event.start_datetime|date:"M d, Y" }}
-                    </div>
-                    <div class="flex items-center text-sm text-slate-400 font-medium">
-                        <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center mr-3 border border-white/5">
-                            <i data-lucide="map-pin" class="w-4 h-4 text-indigo-400"></i>
-                        </div>
-                        <span class="truncate">{{ event.venue_name|default:"Online" }}</span>
-                    </div>
-                </div>
-                
-                <div class="flex items-center justify-between pt-6 border-t border-white/5">
-                    <div class="flex -space-x-2">
-                        <div class="w-8 h-8 rounded-full bg-indigo-600 border-2 border-slate-900 flex items-center justify-center text-[10px] font-black text-white">+{{ event.registered_count }}</div>
-                    </div>
-                    <a href="{% url 'events:event_detail' event.id %}" class="inline-flex items-center text-sm font-black text-indigo-400 hover:text-white transition-colors">
-                        Manage <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
+            <!-- Card Footer: Quick Actions -->
+            <div class="px-5 py-3.5 bg-white/5 border-t border-white/5 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5">
+                    <!-- Copy Link -->
+                    <button 
+                        type="button" 
+                        onclick="window.copyToClipboard('{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:register' event.id %}', this, 'Copied!')"
+                        class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/5 transition-all text-xs"
+                        title="Copy Public Registration Link"
+                    >
+                        <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+                    </button>
+
+                    <!-- QR Scanner shortcut if enabled -->
+                    {% if event.attendance_mode == 'volunteer_scans' %}
+                    <a 
+                        href="{% url 'attendance:volunteer_scanner' event.id %}" 
+                        class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-emerald-400 border border-white/5 transition-all text-xs"
+                        title="Open Volunteer Scanner"
+                    >
+                        <i data-lucide="scan" class="w-3.5 h-3.5"></i>
                     </a>
+                    {% elif event.attendance_mode == 'participant_scans' %}
+                    <a 
+                        href="{% url 'attendance:room_qr' event.id %}" 
+                        target="_blank"
+                        class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-emerald-400 border border-white/5 transition-all text-xs"
+                        title="Open Projector Room QR"
+                    >
+                        <i data-lucide="projector" class="w-3.5 h-3.5"></i>
+                    </a>
+                    {% endif %}
                 </div>
+
+                <!-- Manage Action -->
+                <a href="{% url 'events:event_detail' event.id %}" class="inline-flex items-center px-4 py-1.5 bg-indigo-600/10 hover:bg-indigo-600 text-indigo-400 hover:text-white border border-indigo-500/20 rounded-xl text-xs font-bold transition-all gap-1">
+                    Manage <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                </a>
             </div>
         </div>
         {% empty %}
-        <div class="col-span-full py-24 text-center">
-            <div class="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
-                <i data-lucide="calendar" class="w-12 h-12 text-slate-600"></i>
+        <div class="col-span-full py-20 text-center glass-card rounded-3xl p-10 border-white/5">
+            <div class="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/5">
+                <i data-lucide="calendar-search" class="w-8 h-8 text-slate-500"></i>
             </div>
-            <h3 class="text-2xl font-bold text-white mb-2">No Active Matrix</h3>
-            <p class="text-slate-500 font-medium mb-8">Initialize your first event to start automation.</p>
-            <a href="{% url 'events:event_create' %}" class="inline-flex items-center px-8 py-3 bg-indigo-600 text-white rounded-2xl text-sm font-black shadow-lg hover:bg-indigo-500 transition-all">
-                <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Create Event
-            </a>
+            {% if search_query or current_status != 'all' %}
+                <h3 class="text-xl font-bold text-white mb-2">No Matching Events Found</h3>
+                <p class="text-slate-400 text-xs max-w-sm mx-auto mb-6">We couldn't find any events matching your selected filters or search terms.</p>
+                <a href="{% url 'events:event_list' %}" class="inline-flex items-center px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold border border-white/10 transition-all">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5 mr-1.5"></i> Reset All Filters
+                </a>
+            {% else %}
+                <h3 class="text-xl font-bold text-white mb-2">No Events in Pipeline</h3>
+                <p class="text-slate-400 text-xs max-w-sm mx-auto mb-6">Create your first campus event to start managing registrations and automated certificates.</p>
+                {% if user.role != 'participant' %}
+                <a href="{% url 'events:event_create' %}" class="inline-flex items-center px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/20 transition-all">
+                    <i data-lucide="plus" class="w-3.5 h-3.5 mr-1.5"></i> Create First Event
+                </a>
+                {% endif %}
+            {% endif %}
         </div>
         {% endfor %}
     </div>

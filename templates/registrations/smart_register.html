@@ -1,0 +1,460 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register — {{ event.title }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #080c14;
+    color: #e2e8f0;
+    min-height: 100vh;
+  }
+  /* Glassmorphism card */
+  .glass { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); backdrop-filter: blur(20px); }
+
+  /* Inputs */
+  .field-input {
+    width: 100%; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 0.875rem; padding: 0.75rem 1rem;
+    color: #fff; font-size: 0.9rem; outline: none; transition: border-color 0.2s;
+    font-family: inherit;
+  }
+  .field-input:focus { border-color: #6366f1; }
+  .field-input::placeholder { color: rgba(255,255,255,0.25); }
+
+  /* Step indicator */
+  .step-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: rgba(255,255,255,0.1); transition: all 0.3s;
+  }
+  .step-dot.active { background: #6366f1; box-shadow: 0 0 0 4px rgba(99,102,241,0.2); }
+  .step-dot.done   { background: #10b981; }
+
+  /* Slide animation */
+  .slide-enter  { animation: slideIn 0.4s ease forwards; }
+  .slide-exit   { animation: slideOut 0.3s ease forwards; }
+  @keyframes slideIn  { from { opacity:0; transform: translateX(60px); } to { opacity:1; transform: translateX(0); } }
+  @keyframes slideOut { from { opacity:1; transform: translateX(0); } to { opacity:0; transform: translateX(-60px); } }
+
+  /* Primary button */
+  .btn-primary {
+    width: 100%; padding: 1rem; background: #6366f1;
+    border: none; border-radius: 1rem; color: #fff;
+    font-weight: 800; font-size: 1rem; cursor: pointer;
+    transition: background 0.2s, transform 0.15s; font-family: inherit;
+  }
+  .btn-primary:hover   { background: #4f46e5; }
+  .btn-primary:active  { transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-ghost {
+    background: transparent; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1rem; padding: 0.85rem 1.5rem; color: #94a3b8;
+    font-weight: 700; font-size: 0.875rem; cursor: pointer;
+    transition: all 0.2s; font-family: inherit;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.05); color: #fff; }
+
+  /* Progress bar */
+  .progress-bar { height: 3px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #a855f7); border-radius: 999px; transition: width 0.4s ease; }
+
+  /* Field label */
+  .field-label { display: block; font-size: 0.78rem; font-weight: 700; color: #94a3b8; margin-bottom: 0.5rem; letter-spacing: 0.01em; }
+  .field-required { color: #f87171; }
+  .field-hint { font-size: 0.72rem; color: #475569; margin-top: 0.35rem; }
+
+  /* Section header field type */
+  .section-header { border-top: 1px solid rgba(255,255,255,0.06); padding-top: 1.25rem; margin-top: 0.5rem; }
+  .section-header h3 { font-size: 0.95rem; font-weight: 800; color: #fff; }
+
+  /* Radio / checkbox groups */
+  .option-group { display: flex; flex-direction: column; gap: 0.5rem; }
+  .option-item { display: flex; align-items: center; gap: 0.625rem; padding: 0.625rem 0.875rem;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 0.75rem;
+    cursor: pointer; transition: border-color 0.15s; }
+  .option-item:hover { border-color: rgba(99,102,241,0.4); }
+  .option-item input { accent-color: #6366f1; }
+
+  /* Glow blob */
+  .glow-blob {
+    position: fixed; border-radius: 50%; filter: blur(100px);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* Success animation */
+  @keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+  .pop-in { animation: pop 0.5s cubic-bezier(.36,.07,.19,.97) forwards; }
+</style>
+</head>
+<body>
+
+<div class="glow-blob w-96 h-96 bg-indigo-600/15 top-0 right-0"></div>
+<div class="glow-blob w-64 h-64 bg-purple-600/10 bottom-0 left-0"></div>
+
+<div style="position:relative; z-index:1;" class="min-h-screen flex flex-col items-center justify-center px-4 py-10">
+  <div style="width:100%; max-width:480px;">
+
+    {# ── Event banner ──────────────────────────────────────── #}
+    <div class="glass rounded-3xl px-6 py-5 mb-6 flex items-center space-x-4">
+      <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i data-lucide="calendar-days" style="width:22px;height:22px;color:white;"></i>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <p style="font-size:0.7rem;font-weight:800;color:#6366f1;text-transform:uppercase;letter-spacing:0.12em;">
+          {{ event.organization.name }}
+        </p>
+        <h1 style="font-size:1.05rem;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          {{ event.title }}
+        </h1>
+      </div>
+      {% if event.start_datetime %}
+      <div style="text-align:right;flex-shrink:0;">
+        <p style="font-size:0.7rem;font-weight:700;color:#64748b;">{{ event.start_datetime|date:"d M" }}</p>
+        <p style="font-size:0.68rem;color:#475569;">{{ event.start_datetime|date:"H:i" }}</p>
+      </div>
+      {% endif %}
+    </div>
+
+    {# ── Main wizard card ──────────────────────────────────── #}
+    <div class="glass rounded-3xl overflow-hidden" id="wizard-card">
+
+      {# Progress #}
+      <div style="padding:1.5rem 1.5rem 0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.875rem;">
+          <p style="font-size:0.72rem;font-weight:800;color:#6366f1;text-transform:uppercase;letter-spacing:0.1em;" id="step-label">Step 1</p>
+          <p style="font-size:0.72rem;color:#475569;" id="step-counter"></p>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+
+        {# Step dots #}
+        <div style="display:flex;gap:6px;margin-top:0.875rem;" id="step-dots"></div>
+      </div>
+
+      {# Steps container #}
+      <div id="steps-container" style="padding:1.5rem; min-height: 280px;"></div>
+
+      {# Navigation #}
+      <div style="padding:0 1.5rem 1.5rem; display:flex; gap:0.75rem;">
+        <button class="btn-ghost" id="prev-btn" style="display:none;" onclick="prevStep()">← Back</button>
+        <button class="btn-primary" id="next-btn" onclick="nextStep()">Continue →</button>
+      </div>
+
+    </div>
+
+    {# ── Success card (hidden initially) ─────────────────── #}
+    <div id="success-card" style="display:none;" class="glass rounded-3xl p-8 text-center">
+      <div class="pop-in" style="width:72px;height:72px;border-radius:50%;background:rgba(16,185,129,0.15);border:2px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
+        <i data-lucide="badge-check" style="width:36px;height:36px;color:#10b981;"></i>
+      </div>
+      <h2 style="font-size:1.5rem;font-weight:900;color:#fff;margin-bottom:0.5rem;">You're Registered! 🎉</h2>
+      <p style="font-size:0.875rem;color:#64748b;margin-bottom:1.5rem;">
+        {{ event.title }}
+      </p>
+      <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:1rem;padding:1rem;margin-bottom:1.5rem;">
+        <p style="font-size:0.7rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.25rem;">Your Participant ID</p>
+        <p id="success-id" style="font-family:monospace;font-size:1.1rem;font-weight:900;color:#818cf8;"></p>
+      </div>
+      <a id="pass-link" href="#"
+         style="display:block;width:100%;padding:1rem;background:#6366f1;border-radius:1rem;color:#fff;font-weight:800;text-decoration:none;text-align:center;transition:background 0.2s;"
+         onmouseover="this.style.background='#4f46e5'" onmouseout="this.style.background='#6366f1'">
+        View My Pass →
+      </a>
+      {% if not user_authenticated %}
+      <p style="font-size:0.72rem;color:#475569;margin-top:1rem;">
+        Your CertiFlow account has been created. Check your email for login details.
+      </p>
+      {% endif %}
+    </div>
+
+    {# Guest info note #}
+    {% if not user_authenticated %}
+    <p style="text-align:center;font-size:0.75rem;color:#334155;margin-top:1rem;">
+      Already have an account?
+      <a href="{% url 'account_login' %}?next={{ request.path }}" style="color:#6366f1;font-weight:700;">Sign in</a>
+      to auto-fill your details.
+    </p>
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+const EVENT_ID   = "{{ event.id }}";
+const SCHEMA_URL = "{% url 'registrations:form_schema' event.id %}";
+const REG_URL    = "{% url 'registrations:register' event.id %}";
+const CSRF       = "{{ csrf_token }}";
+const PASS_URL   = "/attendance/event/" + EVENT_ID + "/pass/";
+
+let schema = [], prefill = {}, steps = [], currentStep = 0, formData = {};
+
+// ── Load schema from API ─────────────────────────────────
+async function loadSchema() {
+  try {
+    const res  = await fetch(SCHEMA_URL);
+    const data = await res.json();
+    schema  = data.schema;
+    prefill = data.prefill || {};
+
+    if (schema.length === 0) {
+      // No custom form — just show basic fields
+      schema = [
+        { field_name:'first_name', label:'First Name', field_type:'text', is_required:true, step_number:1, placeholder:'Your first name', prefill_from:'first_name' },
+        { field_name:'last_name',  label:'Last Name',  field_type:'text', is_required:true, step_number:1, placeholder:'Your last name',  prefill_from:'last_name' },
+        { field_name:'email',      label:'Email Address', field_type:'text', is_required:true, step_number:1, placeholder:'you@example.com', prefill_from:'email' },
+        { field_name:'phone',      label:'Phone Number',  field_type:'text', is_required:false,step_number:1, placeholder:'+91 XXXXX XXXXX', prefill_from:'phone' },
+      ];
+    }
+
+    // Apply prefill
+    schema.forEach(f => {
+      if (f.prefill_from && prefill[f.prefill_from]) {
+        formData[f.field_name] = prefill[f.prefill_from];
+      }
+    });
+
+    // Group by step
+    const stepNums = [...new Set(schema.map(f => f.step_number))].sort((a,b) => a-b);
+    steps = stepNums;
+
+    buildStepDots();
+    renderStep(0);
+  } catch(e) {
+    console.error('Schema load error:', e);
+    document.getElementById('steps-container').innerHTML =
+      '<p style="color:#94a3b8;text-align:center;padding:2rem;">Could not load form. Please refresh.</p>';
+  }
+}
+
+// ── Build step dots ───────────────────────────────────────
+function buildStepDots() {
+  const el = document.getElementById('step-dots');
+  el.innerHTML = '';
+  steps.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'step-dot';
+    d.id = `dot-${i}`;
+    el.appendChild(d);
+  });
+}
+
+function updateDots() {
+  steps.forEach((_, i) => {
+    const d = document.getElementById(`dot-${i}`);
+    if (!d) return;
+    d.className = 'step-dot' + (i < currentStep ? ' done' : i === currentStep ? ' active' : '');
+  });
+}
+
+// ── Render a step ─────────────────────────────────────────
+function renderStep(idx) {
+  const container = document.getElementById('steps-container');
+  const stepNum   = steps[idx];
+  const fields    = schema.filter(f => f.step_number === stepNum);
+
+  container.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = 'slide-enter';
+  div.style.cssText = 'display:flex;flex-direction:column;gap:1.25rem;';
+
+  fields.forEach(f => {
+    if (!isVisible(f)) return;
+    div.appendChild(buildFieldEl(f));
+  });
+
+  container.appendChild(div);
+
+  // Navigation visibility
+  document.getElementById('prev-btn').style.display = idx > 0 ? 'block' : 'none';
+  const nextBtn = document.getElementById('next-btn');
+  const isLast  = idx === steps.length - 1;
+  nextBtn.textContent = isLast ? 'Submit Registration' : 'Continue →';
+
+  // Progress
+  const pct = steps.length > 1 ? (idx / (steps.length - 1)) * 100 : 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('step-label').textContent   = `Step ${idx + 1} of ${steps.length}`;
+  document.getElementById('step-counter').textContent  = Math.round(pct) + '% complete';
+
+  updateDots();
+  lucide.createIcons();
+}
+
+// ── Conditional logic check ───────────────────────────────
+function isVisible(field) {
+  const cond = field.conditional_logic;
+  if (!cond || !cond.field_name) return true;
+  const val = formData[cond.field_name] || '';
+  if (cond.operator === 'equals') return val === cond.value;
+  return true;
+}
+
+// ── Build field element ───────────────────────────────────
+function buildFieldEl(f) {
+  const wrap = document.createElement('div');
+
+  if (f.field_type === 'section') {
+    wrap.className = 'section-header';
+    wrap.innerHTML = `<h3>${f.label}</h3>${f.help_text ? `<p class="field-hint">${f.help_text}</p>` : ''}`;
+    return wrap;
+  }
+
+  const req  = f.is_required ? '<span class="field-required"> *</span>' : '';
+  const hint = f.help_text   ? `<p class="field-hint">${f.help_text}</p>` : '';
+  let inputHtml = '';
+
+  const cur = formData[f.field_name] || '';
+
+  if (['text','number','url','email'].includes(f.field_type)) {
+    inputHtml = `<input type="${f.field_type}" id="field-${f.field_name}"
+      class="field-input" placeholder="${f.placeholder || ''}"
+      value="${escHtml(cur)}"
+      oninput="formData['${f.field_name}'] = this.value">`;
+
+  } else if (f.field_type === 'date') {
+    inputHtml = `<input type="date" id="field-${f.field_name}"
+      class="field-input" value="${escHtml(cur)}"
+      oninput="formData['${f.field_name}'] = this.value">`;
+
+  } else if (f.field_type === 'textarea') {
+    inputHtml = `<textarea id="field-${f.field_name}" rows="3"
+      class="field-input" placeholder="${f.placeholder || ''}"
+      oninput="formData['${f.field_name}'] = this.value" style="resize:none;">${escHtml(cur)}</textarea>`;
+
+  } else if (f.field_type === 'select') {
+    const opts = f.options.map(o => `<option value="${escHtml(o)}" ${o===cur?'selected':''}>${escHtml(o)}</option>`).join('');
+    inputHtml = `<select id="field-${f.field_name}" class="field-input" onchange="formData['${f.field_name}'] = this.value">
+      <option value="">Select an option</option>${opts}</select>`;
+
+  } else if (f.field_type === 'radio') {
+    const opts = f.options.map(o =>
+      `<label class="option-item">
+        <input type="radio" name="${f.field_name}" value="${escHtml(o)}" ${o===cur?'checked':''}
+               onchange="formData['${f.field_name}'] = this.value">
+        <span style="font-size:0.875rem;color:#cbd5e1;">${escHtml(o)}</span>
+      </label>`).join('');
+    inputHtml = `<div class="option-group">${opts}</div>`;
+
+  } else if (f.field_type === 'checkbox') {
+    const checked = Array.isArray(cur) ? cur : (cur ? [cur] : []);
+    const opts = f.options.map(o =>
+      `<label class="option-item">
+        <input type="checkbox" value="${escHtml(o)}" ${checked.includes(o)?'checked':''}
+               onchange="updateCheckbox('${f.field_name}', this.value, this.checked)">
+        <span style="font-size:0.875rem;color:#cbd5e1;">${escHtml(o)}</span>
+      </label>`).join('');
+    inputHtml = `<div class="option-group">${opts}</div>`;
+
+  } else if (f.field_type === 'file') {
+    inputHtml = `<div style="border:1px dashed rgba(255,255,255,0.1);border-radius:0.875rem;padding:1.5rem;text-align:center;cursor:pointer;"
+        onclick="document.getElementById('file-${f.field_name}').click()">
+      <i data-lucide="upload-cloud" style="width:24px;height:24px;color:#6366f1;margin:0 auto 0.5rem;display:block;"></i>
+      <p style="font-size:0.8rem;color:#64748b;">Click to upload · Max 5MB</p>
+      <input type="file" id="file-${f.field_name}" style="display:none;"
+             onchange="formData['${f.field_name}'] = this.files[0]?.name || ''">
+    </div>`;
+  }
+
+  wrap.innerHTML = `<label class="field-label">${f.label}${req}</label>${inputHtml}${hint}`;
+  return wrap;
+}
+
+function updateCheckbox(name, value, checked) {
+  let cur = Array.isArray(formData[name]) ? formData[name] : [];
+  if (checked) { if (!cur.includes(value)) cur.push(value); }
+  else { cur = cur.filter(v => v !== value); }
+  formData[name] = cur;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Validation ────────────────────────────────────────────
+function validateCurrentStep() {
+  const stepNum = steps[currentStep];
+  const fields  = schema.filter(f => f.step_number === stepNum && f.field_type !== 'section');
+  for (const f of fields) {
+    if (!isVisible(f)) continue;
+    if (!f.is_required) continue;
+    const val = formData[f.field_name];
+    if (!val || (Array.isArray(val) && val.length === 0)) {
+      const el = document.getElementById(`field-${f.field_name}`);
+      if (el) {
+        el.style.borderColor = '#f87171';
+        el.focus();
+        setTimeout(() => el.style.borderColor = '', 2000);
+      }
+      return false;
+    }
+  }
+  return true;
+}
+
+// ── Navigation ────────────────────────────────────────────
+function prevStep() {
+  if (currentStep > 0) { currentStep--; renderStep(currentStep); }
+}
+
+async function nextStep() {
+  if (!validateCurrentStep()) return;
+
+  if (currentStep < steps.length - 1) {
+    currentStep++;
+    renderStep(currentStep);
+  } else {
+    await submitForm();
+  }
+}
+
+// ── Submit ────────────────────────────────────────────────
+async function submitForm() {
+  const btn = document.getElementById('next-btn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+
+  try {
+    const res  = await fetch(REG_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify(formData),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      document.getElementById('wizard-card').style.display  = 'none';
+      document.getElementById('success-card').style.display = 'block';
+      document.getElementById('success-id').textContent     = data.participant_id;
+      document.getElementById('pass-link').href             = PASS_URL;
+      lucide.createIcons();
+    } else if (res.status === 409) {
+      alert('You are already registered for this event.');
+      btn.disabled = false;
+      btn.textContent = 'Submit Registration';
+    } else {
+      alert(data.error || 'Registration failed. Please try again.');
+      btn.disabled = false;
+      btn.textContent = 'Submit Registration';
+    }
+  } catch(e) {
+    alert('Network error. Please check your connection.');
+    btn.disabled = false;
+    btn.textContent = 'Submit Registration';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadSchema();
+  lucide.createIcons();
+});
+</script>
+</body>
+</html>
